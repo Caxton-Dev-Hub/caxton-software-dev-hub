@@ -1,0 +1,226 @@
+// Caxton Software Dev Hub — data model
+// Transactional data lives here. The course/mentorship catalogue lives in
+// src/content/* (content-as-code) so the marketing site renders without a DB.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  MENTOR
+  ADMIN
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  ABANDONED
+  REFUNDED
+}
+
+enum PurchaseKind {
+  COURSE
+  MENTORSHIP
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  AWAITING_PAYMENT
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum WaitlistStatus {
+  WAITING
+  INVITED
+  CONVERTED
+  DECLINED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CLOSED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  role         Role     @default(STUDENT)
+  avatarUrl    String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  enrollments Enrollment[]
+  bookings    MentorshipBooking[]
+  payments    Payment[]
+  progress    LessonProgress[]
+  threads     AssistantThread[]
+  waitlist    WaitlistEntry[]
+
+  @@index([role])
+}
+
+/// One paid seat on a course. `courseSlug` references src/content/courses.ts
+model Enrollment {
+  id          String           @id @default(cuid())
+  userId      String
+  courseSlug  String
+  cohort      String?
+  status      EnrollmentStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now())
+  completedAt DateTime?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+  paymentId String?  @unique
+
+  @@unique([userId, courseSlug])
+  @@index([courseSlug])
+}
+
+/// Per-lesson completion, keyed by the lesson id in src/content/courses.ts
+model LessonProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  courseSlug  String
+  lessonId    String
+  completedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId, courseSlug])
+}
+
+/// A booked mentorship plan. `planSlug` references src/content/mentorship.ts
+model MentorshipBooking {
+  id        String        @id @default(cuid())
+  userId    String
+  planSlug  String
+  goal      String        @db.Text
+  status    BookingStatus @default(AWAITING_PAYMENT)
+  startsAt  DateTime?
+  createdAt DateTime      @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+  paymentId String?  @unique
+
+  @@index([userId])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  reference   String        @unique
+  provider    String        @default("paystack")
+  kind        PurchaseKind
+  itemSlug    String
+  /// Amount in kobo (1 NGN = 100 kobo) — never store money as a float.
+  amountKobo  Int
+  currency    String        @default("NGN")
+  status      PaymentStatus @default(PENDING)
+  channel     String?
+  paidAt      DateTime?
+  rawResponse Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment Enrollment?
+  booking    MentorshipBooking?
+
+  @@index([userId])
+  @@index([status])
+}
+
+/// Contact / project enquiry from the website.
+model Lead {
+  id        String     @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  budget    String?
+  service   String?
+  message   String     @db.Text
+  status    LeadStatus @default(NEW)
+  createdAt DateTime   @default(now())
+
+  @@index([status])
+}
+
+/// Someone waiting for a seat on a full cohort. `courseSlug` references
+/// src/content/courses.ts. Anonymous visitors can join, so `userId` is optional.
+model WaitlistEntry {
+  id         String         @id @default(cuid())
+  courseSlug String
+  name       String
+  email      String
+  phone      String?
+  note       String?        @db.Text
+  status     WaitlistStatus @default(WAITING)
+  userId     String?
+  invitedAt  DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// One place in the queue per person per course.
+  @@unique([courseSlug, email])
+  @@index([courseSlug, status])
+  @@index([userId])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+/// A conversation with the AI study assistant.
+model AssistantThread {
+  id         String   @id @default(cuid())
+  userId     String
+  courseSlug String?
+  title      String   @default("New session")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AssistantMessage[]
+
+  @@index([userId])
+}
+
+model AssistantMessage {
+  id        String   @id @default(cuid())
+  threadId  String
+  role      String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  thread AssistantThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+}

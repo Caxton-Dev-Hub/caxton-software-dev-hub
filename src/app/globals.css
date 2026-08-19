@@ -1,26 +1,191 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ───────────────────────────────────────────────────────────────
+   Caxton Software Dev Hub — design tokens
+
+   Palette is drawn from the CAC Certificate of Registration itself:
+   the engraved green guilloche border, the white paper it is printed
+   on, and the gold of the seal. Green carries the brand, white carries
+   the page, gold appears only on marks of verification.
+   ─────────────────────────────────────────────────────────────── */
+
+@theme {
+  --color-paper: #ffffff;
+  --color-mist: #f6faf7;
+  --color-mint: #e8f3ec;
+  --color-edge: #d7e5db;
+  --color-edge-strong: #b9d0c1;
+
+  --color-forest: #0a6b3d;
+  --color-forest-deep: #063620;
+  --color-signal: #00a651;
+
+  --color-ink: #08160f;
+  --color-ink-soft: #40544a;
+  --color-ink-faint: #6d8276;
+
+  --color-seal: #b0862c;
+  --color-seal-soft: #f6efdd;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-data), ui-monospace, "SFMono-Regular", monospace;
+
+  --text-display: 4.25rem;
+  --text-display--line-height: 0.94;
+  --text-display--letter-spacing: -0.035em;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  * {
+    border-color: var(--color-edge);
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-signal);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.028em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* The eyebrow: mono, small caps, preceded by a hairline rule. Used as the
+     section marker throughout — it reads like an entry in a register. */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-forest);
+  }
+
+  .eyebrow::before {
+    content: "";
+    width: 1.75rem;
+    height: 1px;
+    background-color: currentColor;
+    opacity: 0.55;
+  }
+
+  .eyebrow-on-dark {
+    color: #7fd9a6;
+  }
+
+  /* Hairline grid rule used to separate stacked rows. */
+  .rule {
+    border-top: 1px solid var(--color-edge);
+  }
+
+  .prose-body p {
+    margin-bottom: 1.15em;
+    line-height: 1.75;
+    color: var(--color-ink-soft);
+  }
+
+  .prose-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prose-article h2 {
+    font-size: 1.5rem;
+    margin-top: 2.5rem;
+    margin-bottom: 0.85rem;
+    color: var(--color-ink);
+  }
+
+  .prose-article p {
+    margin-bottom: 1.15em;
+    line-height: 1.8;
+    color: var(--color-ink-soft);
+  }
+
+  .prose-article li {
+    margin-bottom: 0.5rem;
+    line-height: 1.75;
+    color: var(--color-ink-soft);
+  }
+
+  .prose-article code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background-color: var(--color-mint);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    color: var(--color-forest-deep);
+  }
+
+  .prose-article strong {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+}
+
+/* ── Motion ───────────────────────────────────────────────────── */
+
+@keyframes caxton-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.rise {
+  animation: caxton-rise 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .rise {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
 }
