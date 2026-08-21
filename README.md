@@ -171,7 +171,7 @@ The flow, end to end:
 3. The browser goes to Flutterwave, pays, and returns to `/checkout/callback`
 4. The callback calls `POST /api/payments/verify`, which **re-verifies the
    transaction against the Flutterwave API** and fulfils it
-5. Independently, Flutterwave calls `POST /api/flutterwave/webhook`, which
+5. Independently, Flutterwave calls `POST /dev-hub/api/flutterwave/webhook`, which
    checks the `verif-hash` header against the configured secret hash and
    fulfils the same payment
 
@@ -193,7 +193,7 @@ Two things the code deliberately does not trust:
 1. Add your secret key to `FLUTTERWAVE_SECRET_KEY`
 2. In the Flutterwave dashboard, set a webhook Secret Hash and put the same
    value in `FLUTTERWAVE_SECRET_HASH`, then set the webhook URL to
-   `https://your-domain.com/api/flutterwave/webhook`
+   `https://your-domain.com/dev-hub/api/flutterwave/webhook`
 3. Test with Flutterwave's test cards before going live
 
 **Switching provider:** everything provider-specific is in

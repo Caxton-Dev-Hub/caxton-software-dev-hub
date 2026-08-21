@@ -6,7 +6,7 @@ import { verifyAndFulfil } from "@/lib/fulfilment";
 /**
  * Flutterwave webhook.
  *
- * Point your dashboard at  https://<your-domain>/api/flutterwave/webhook
+ * Point your dashboard at  https://<your-domain>/dev-hub/api/flutterwave/webhook
  *
  * Verification is a direct comparison against the `verif-hash` header, not a
  * signature over the body, so there is no need to read the body as raw text
