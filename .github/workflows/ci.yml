@@ -30,6 +30,14 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm typecheck
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm test
+
   build:
     name: Build
     runs-on: ubuntu-latest

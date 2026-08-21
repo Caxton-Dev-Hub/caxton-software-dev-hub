@@ -378,7 +378,7 @@ export const courses: Course[] = [
             title: "Payments and webhooks in Nigeria",
             minutes: 65,
             summary:
-              "Integrating Paystack end to end: initialising a transaction, verifying it, and processing webhooks without double-crediting.",
+              "Integrating Flutterwave end to end: initialising a transaction, verifying it, and processing webhooks without double-crediting.",
           },
           {
             id: "cx201-3-3",

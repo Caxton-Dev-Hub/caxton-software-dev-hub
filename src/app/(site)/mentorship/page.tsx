@@ -47,7 +47,7 @@ export default function MentorshipPage() {
             ))}
           </div>
           <p className="mt-8 text-[0.875rem] text-ink-faint">
-            Prices are in naira and billed through Paystack. Monthly plans renew
+            Prices are in naira and billed through Flutterwave. Monthly plans renew
             manually — we will never charge a card you did not expect us to.
           </p>
         </Container>

@@ -120,8 +120,8 @@ export default function VerifyPage() {
                     <li>
                       We will <strong className="text-ink">never</strong> ask you
                       to pay into a personal bank account. Every payment goes
-                      through Paystack or to an account in the registered business
-                      name above.
+                      through Flutterwave or to an account in the registered
+                      business name above.
                     </li>
                     <li>
                       We will never ask for your card PIN, your BVN, or a one-time

@@ -132,7 +132,7 @@ model Payment {
   id          String        @id @default(cuid())
   userId      String
   reference   String        @unique
-  provider    String        @default("paystack")
+  provider    String        @default("flutterwave")
   kind        PurchaseKind
   itemSlug    String
   /// Amount in kobo (1 NGN = 100 kobo) — never store money as a float.

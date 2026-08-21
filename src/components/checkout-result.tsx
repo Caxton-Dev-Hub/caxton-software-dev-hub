@@ -86,7 +86,7 @@ export function CheckoutResult() {
             <Loader2 className="size-7 animate-spin text-forest" />
             <h1 className="mt-5 text-2xl text-ink">Confirming your payment</h1>
             <p className="mt-2.5 leading-relaxed text-ink-soft">
-              We are checking with Paystack. This usually takes a second — do not
+              We are checking with Flutterwave. This usually takes a second — do not
               close this page.
             </p>
           </>
@@ -130,7 +130,7 @@ export function CheckoutResult() {
             <p className="mt-2.5 leading-relaxed text-ink-soft">
               {result.status === "pending"
                 ? "It looks like the payment was abandoned before it finished. Nothing has been charged."
-                : "Paystack reported that this payment failed. If your account was debited, send us the reference below and we will trace it."}
+                : "Flutterwave reported that this payment failed. If your account was debited, send us the reference below and we will trace it."}
             </p>
             <dl className="mt-6 rounded-lg border border-edge bg-mist p-4">
               <dt className="font-mono text-[0.625rem] tracking-[0.16em] text-ink-faint uppercase">
@@ -172,7 +172,7 @@ export function CheckoutResult() {
       </div>
 
       <p className="mt-8 border-t border-edge pt-5 text-[0.8125rem] leading-relaxed text-ink-faint">
-        Payments are processed by Paystack. We never see or store your card
+        Payments are processed by Flutterwave. We never see or store your card
         details.{" "}
         <Link href="/legal/refunds" className="underline underline-offset-2">
           Refund policy

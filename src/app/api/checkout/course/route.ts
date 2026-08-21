@@ -8,8 +8,8 @@ import { instalmentKobo } from "@/lib/money";
 import {
   buildReference,
   initializeTransaction,
-  isPaystackConfigured,
-} from "@/lib/paystack";
+  isFlutterwaveConfigured,
+} from "@/lib/flutterwave";
 import { site } from "@/content/site";
 
 export async function POST(request: Request) {
@@ -53,11 +53,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isPaystackConfigured()) {
+  if (!isFlutterwaveConfigured()) {
     return NextResponse.json(
       {
         error:
-          "Payments are not configured on this deployment yet. Add PAYSTACK_SECRET_KEY to the environment.",
+          "Payments are not configured on this deployment yet. Add FLUTTERWAVE_SECRET_KEY to the environment.",
       },
       { status: 503 },
     );
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       where: { id: payment.id },
       data: { status: "FAILED" },
     });
-    console.error("Paystack initialise failed", error);
+    console.error("Flutterwave initialise failed", error);
     return NextResponse.json(
       { error: "We could not reach the payment provider. Please try again." },
       { status: 502 },

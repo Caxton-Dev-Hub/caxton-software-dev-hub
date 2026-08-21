@@ -10,7 +10,7 @@ It is one application doing two jobs:
 - **A studio site** — services, case studies, a verifiable registration record,
   and an enquiry pipeline that lands in an admin inbox.
 - **A learning platform** — cohort courses and mentorship plans that people pay
-  for in naira through Paystack, with progress tracking and an AI study
+  for in naira through Flutterwave, with progress tracking and an AI study
   assistant scoped to each learner's curriculum.
 
 ---
@@ -24,7 +24,7 @@ It is one application doing two jobs:
 | Styling | Tailwind CSS v4 | Design tokens live in `src/app/globals.css` under `@theme` |
 | Database | PostgreSQL + Prisma 6 | Money and enrolments need real transactions |
 | Auth | Hand-rolled: `bcryptjs` + `jose` JWT in an httpOnly cookie | No third-party dependency for something this small; see note below |
-| Payments | **Paystack** (NGN) | Recommended: settles to a Nigerian account, supports card / transfer / USSD out of the box |
+| Payments | **Flutterwave** (NGN) | Recommended: settles to a Nigerian account, supports card / transfer / USSD out of the box |
 | AI | Anthropic Claude (`claude-opus-5`), streamed | The study assistant |
 | Email | Resend, or console when unconfigured | Local development needs no email provider |
 
@@ -61,9 +61,9 @@ Then fill it in. Everything marked `DUMMY` is a placeholder.
 |---|---|---|
 | `DATABASE_URL` | yes | Also put this in a `.env` file — the Prisma CLI reads `.env`, Next.js reads `.env.local` |
 | `AUTH_SECRET` | yes | `openssl rand -base64 32` |
-| `NEXT_PUBLIC_SITE_URL` | yes | Used for Paystack callbacks, sitemap, and OG tags |
-| `PAYSTACK_SECRET_KEY` | for payments | From the Paystack dashboard. Without it, checkout returns a clear 503 and everything else still works |
-| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | for payments | — |
+| `NEXT_PUBLIC_SITE_URL` | yes | Used for Flutterwave callbacks, sitemap, and OG tags |
+| `FLUTTERWAVE_SECRET_KEY` | for payments | From the Flutterwave dashboard. Without it, checkout returns a clear 503 and everything else still works |
+| `FLUTTERWAVE_SECRET_HASH` | for payments | Dashboard → Settings → Webhooks → Secret Hash |
 | `ANTHROPIC_API_KEY` | for the assistant | Without it, the assistant page explains it is switched off |
 | `RESEND_API_KEY` | no | Leave empty to print emails to the server console |
 
@@ -110,6 +110,8 @@ http://localhost:3000
 | `npm start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm run test` | Vitest, once (CI) |
+| `npm run test:watch` | Vitest, watch mode |
 | `npm run db:push` | Sync the schema without migration files (development) |
 | `npm run db:migrate` | Create and apply a migration (use this for production) |
 | `npm run db:seed` | Seed demo data |
@@ -129,13 +131,13 @@ src/
     (auth)/              Sign in and register — split-screen layout
     dashboard/           Student area (auth required)
     admin/               Admin area (ADMIN role required)
-    checkout/callback/   Where Paystack returns the customer
+    checkout/callback/   Where Flutterwave returns the customer
     api/                 Route handlers
   components/
     ui/                  Primitives: Button, Field, Badge, Section, Container
     …                    Composed components
   content/               The catalogue, as code — see below
-  lib/                   auth, prisma, paystack, fulfilment, money, mail, …
+  lib/                   auth, prisma, flutterwave, fulfilment, money, mail, …
   proxy.ts               Route protection (Next 16's renamed middleware)
 ```
 
@@ -165,12 +167,13 @@ The flow, end to end:
 
 1. Learner clicks enrol → `POST /api/checkout/course` (or `/mentorship`)
 2. We create a `Payment` row with status `PENDING` and a unique reference,
-   then call Paystack's initialise endpoint and return the authorisation URL
-3. The browser goes to Paystack, pays, and returns to `/checkout/callback`
+   then call Flutterwave's initialise endpoint and return the authorisation URL
+3. The browser goes to Flutterwave, pays, and returns to `/checkout/callback`
 4. The callback calls `POST /api/payments/verify`, which **re-verifies the
-   transaction against the Paystack API** and fulfils it
-5. Independently, Paystack calls `POST /api/paystack/webhook`, which verifies
-   the HMAC-SHA512 signature over the raw body and fulfils the same payment
+   transaction against the Flutterwave API** and fulfils it
+5. Independently, Flutterwave calls `POST /api/flutterwave/webhook`, which
+   checks the `verif-hash` header against the configured secret hash and
+   fulfils the same payment
 
 The webhook is the source of truth; step 4 exists so the customer sees a
 confirmed screen immediately. `fulfilPayment()` is idempotent, so both paths
@@ -185,15 +188,17 @@ Two things the code deliberately does not trust:
 - The amount reported by the browser — it is compared against the `Payment` row
 - Webhook payload contents — the reference is re-verified against the API
 
-### Configuring Paystack
+### Configuring Flutterwave
 
-1. Add your secret key to `PAYSTACK_SECRET_KEY`
-2. In the Paystack dashboard, set the webhook URL to
-   `https://your-domain.com/api/paystack/webhook`
-3. Test with Paystack's test cards before going live
+1. Add your secret key to `FLUTTERWAVE_SECRET_KEY`
+2. In the Flutterwave dashboard, set a webhook Secret Hash and put the same
+   value in `FLUTTERWAVE_SECRET_HASH`, then set the webhook URL to
+   `https://your-domain.com/api/flutterwave/webhook`
+3. Test with Flutterwave's test cards before going live
 
-**Switching provider:** everything provider-specific is in `src/lib/paystack.ts`
-plus the webhook route. Nothing else references Paystack by name.
+**Switching provider:** everything provider-specific is in
+`src/lib/flutterwave.ts` plus the webhook route. Nothing else references
+Flutterwave by name.
 
 ---
 
@@ -288,9 +293,9 @@ Any Node host works. On Vercel:
 2. Add every variable from `.env.example` to the project's environment
 3. Point `DATABASE_URL` at a managed Postgres (Neon, Supabase, or Railway)
 4. Use `npm run db:migrate` rather than `db:push` for production schema changes
-5. Set the Paystack webhook URL to your production domain
-6. Set `NEXT_PUBLIC_SITE_URL` to your production URL — Paystack callbacks depend
-   on it
+5. Set the Flutterwave webhook URL and Secret Hash to your production domain
+6. Set `NEXT_PUBLIC_SITE_URL` to your production URL — Flutterwave callbacks
+   depend on it
 
 The marketing pages are server-rendered rather than fully static because the
 header reflects whether you are signed in. If you would rather have them static

@@ -212,7 +212,7 @@ export default async function CoursePage({ params }: Params) {
                 </ul>
 
                 <p className="mt-5 text-[0.8125rem] leading-relaxed text-ink-faint">
-                  Payment is processed by Paystack in naira. Full refund up to
+                  Payment is processed by Flutterwave in naira. Full refund up to
                   seven days before the cohort starts —{" "}
                   <Link href="/legal/refunds" className="underline underline-offset-2">
                     refund policy

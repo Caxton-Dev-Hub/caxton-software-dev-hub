@@ -44,7 +44,7 @@ We may change a cohort's schedule where we have to. If a change makes the course
 
 ## 4. Payment
 
-Prices are shown in Nigerian naira and include any applicable tax unless stated otherwise. Payments are processed by Paystack; we do not store your card details on our servers.
+Prices are shown in Nigerian naira and include any applicable tax unless stated otherwise. Payments are processed by Flutterwave; we do not store your card details on our servers.
 
 Instalment plans require the balance to be settled by the date stated at checkout. If the balance is not settled, access may be suspended until it is.
 
@@ -98,7 +98,7 @@ This policy explains what we do with your information. We have tried to write it
 
 **When you create an account:** your name, email address, an optional phone number, and a hashed version of your password. We never store your password itself.
 
-**When you pay:** a payment reference, the amount, the status, and the payment channel. Card details go directly to Paystack and never reach our servers.
+**When you pay:** a payment reference, the amount, the status, and the payment channel. Card details go directly to Flutterwave and never reach our servers.
 
 **When you use the study assistant:** the messages you send and the replies you receive, so that you can return to a conversation later.
 
@@ -119,7 +119,7 @@ We rely on performance of a contract for the first three, our legitimate interes
 
 We use a small number of processors, each bound by contract to protect your data:
 
-- **Paystack** — payment processing
+- **Flutterwave** — payment processing
 - **Anthropic** — the model behind the study assistant. Your conversations are sent to their API to generate replies.
 - **Resend** — transactional email delivery
 - **Our hosting provider** — running the site and database
@@ -196,7 +196,7 @@ Project deposits are governed by the signed agreement for that project. Our stan
 
 Email us from the address on your account with your name, what you bought, and the reason. We respond within two working days and process approved refunds within five.
 
-Refunds are returned by the same method you paid with. Paystack usually returns funds to a Nigerian card within a few working days, though the exact timing is up to your bank.
+Refunds are returned by the same method you paid with. Flutterwave usually returns funds to a Nigerian card within a few working days, though the exact timing is up to your bank.
 
 ## If you are unhappy
 

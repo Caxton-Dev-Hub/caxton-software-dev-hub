@@ -7,13 +7,13 @@ import { sendMail } from "@/lib/mail";
 import { getCourse } from "@/content/courses";
 import { getPlan } from "@/content/mentorship";
 import { formatKobo } from "@/lib/money";
-import { verifyTransaction } from "@/lib/paystack";
+import { verifyTransaction } from "@/lib/flutterwave";
 
 /**
  * Turns a successful payment into the thing the customer bought.
  *
- * Called from two places — the Paystack webhook and the browser callback — so
- * it must be idempotent. A payment already marked PAID is a no-op.
+ * Called from two places — the Flutterwave webhook and the browser callback —
+ * so it must be idempotent. A payment already marked PAID is a no-op.
  */
 export async function fulfilPayment(payment: Payment): Promise<Payment> {
   if (payment.status === "PAID") return payment;
@@ -91,7 +91,7 @@ async function notifyCustomer(payment: Payment) {
   });
 }
 
-/** Verifies with Paystack, then fulfils. Safe to call repeatedly. */
+/** Verifies with Flutterwave, then fulfils. Safe to call repeatedly. */
 export async function verifyAndFulfil(reference: string): Promise<{
   status: "paid" | "pending" | "failed" | "unknown";
   payment: Payment | null;
@@ -116,7 +116,7 @@ export async function verifyAndFulfil(reference: string): Promise<{
   // Never trust the amount from the browser — compare against what we recorded.
   if (transaction.amount !== payment.amountKobo) {
     console.error(
-      `Amount mismatch on ${reference}: expected ${payment.amountKobo}, Paystack reported ${transaction.amount}`,
+      `Amount mismatch on ${reference}: expected ${payment.amountKobo}, Flutterwave reported ${transaction.amount}`,
     );
     const failed = await prisma.payment.update({
       where: { id: payment.id },

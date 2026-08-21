@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { verifyAndFulfil } from "@/lib/fulfilment";
 
 /**
- * Called by the checkout callback page once the customer returns from Paystack.
+ * Called by the checkout callback page once the customer returns from Flutterwave.
  * The webhook is the source of truth; this exists so the customer sees a
  * confirmed state immediately instead of waiting for the webhook to land.
  */

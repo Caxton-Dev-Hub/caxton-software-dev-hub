@@ -1,23 +1,25 @@
 import { NextResponse } from "next/server";
 
-import { isValidWebhookSignature } from "@/lib/paystack";
+import { isValidWebhookSignature } from "@/lib/flutterwave";
 import { verifyAndFulfil } from "@/lib/fulfilment";
 
 /**
- * Paystack webhook.
+ * Flutterwave webhook.
  *
- * Point your dashboard at  https://<your-domain>/api/paystack/webhook
+ * Point your dashboard at  https://<your-domain>/api/flutterwave/webhook
  *
- * The signature is computed over the raw body, so read it as text and do not
- * let any middleware parse it first.
+ * Verification is a direct comparison against the `verif-hash` header, not a
+ * signature over the body, so there is no need to read the body as raw text
+ * before any middleware touches it — but we still parse it ourselves rather
+ * than trusting a framework body parser to fail loudly.
  */
 export async function POST(request: Request) {
   const raw = await request.text();
-  const signature = request.headers.get("x-paystack-signature");
+  const signature = request.headers.get("verif-hash");
 
   let valid = false;
   try {
-    valid = isValidWebhookSignature(raw, signature);
+    valid = isValidWebhookSignature(signature);
   } catch (error) {
     console.error("Webhook signature check failed", error);
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
@@ -27,26 +29,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  let event: { event?: string; data?: { reference?: string } };
+  let event: { event?: string; data?: { tx_ref?: string } };
   try {
     event = JSON.parse(raw);
   } catch {
     return NextResponse.json({ error: "Malformed body" }, { status: 400 });
   }
 
-  const reference = event.data?.reference;
+  const reference = event.data?.tx_ref;
   if (!reference) {
-    // Acknowledge anything we do not handle, so Paystack stops retrying.
+    // Acknowledge anything we do not handle, so Flutterwave stops retrying.
     return NextResponse.json({ received: true });
   }
 
-  if (event.event === "charge.success") {
+  if (event.event === "charge.completed") {
     try {
       // Re-verify against the API rather than trusting the payload's amount.
       await verifyAndFulfil(reference);
     } catch (error) {
       console.error(`Webhook fulfilment failed for ${reference}`, error);
-      // 500 makes Paystack retry, which is what we want on a transient failure.
+      // 500 makes Flutterwave retry, which is what we want on a transient failure.
       return NextResponse.json({ error: "Fulfilment failed" }, { status: 500 });
     }
   }
