@@ -19,7 +19,7 @@ import { ProcessList } from "@/components/process-list";
 import { TestimonialGrid } from "@/components/testimonials";
 import { Guilloche } from "@/components/guilloche";
 
-import { courses } from "@/content/courses";
+import { courses, getCourse } from "@/content/courses";
 import { mentorshipPlans } from "@/content/mentorship";
 import { deliveryProcess, services } from "@/content/services";
 import { guarantees, site, testimonials } from "@/content/site";
@@ -354,7 +354,7 @@ export default function HomePage() {
                 </p>
                 <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/10 pt-6">
                   <span className="font-display text-2xl text-white">
-                    {formatKobo(15_000_000)}
+                    {formatKobo(getCourse("ai-assisted-engineering")!.priceKobo)}
                   </span>
                   <span className="font-mono text-[0.6875rem] tracking-[0.14em] text-mint/55 uppercase">
                     6 weeks · self-paced + mentor

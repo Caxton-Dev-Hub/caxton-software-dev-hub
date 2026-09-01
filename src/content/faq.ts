@@ -9,7 +9,7 @@ export const trainingFaqs: Faq[] = [
   {
     question: "Can I pay in instalments?",
     answer:
-      "Yes, on all cohort courses. Pay 50% to secure your seat and the balance before week five. Choose the instalment option at checkout, or email training@caxtonhub.com and we will set it up manually.",
+      "Yes, on all cohort courses. Pay 50% to secure your seat and the balance before week five. Choose the instalment option at checkout, or email training@caxtondevhub.xyz and we will set it up manually.",
   },
   {
     question: "What happens if I miss a live session?",
@@ -37,7 +37,7 @@ export const clientFaqs: Faq[] = [
   {
     question: "How much does a project cost?",
     answer:
-      "A marketing site typically starts around ₦450,000. Custom software starts around ₦1.5m and depends entirely on scope. You get a fixed written quote after discovery, before any commitment.",
+      "A marketing site typically starts around ₦180,000. Custom software starts around ₦600,000 and depends entirely on scope. You get a fixed written quote after discovery, before any commitment.",
   },
   {
     question: "How long will it take?",
