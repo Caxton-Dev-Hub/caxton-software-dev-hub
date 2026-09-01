@@ -19,7 +19,7 @@ export const services: Service[] = [
     summary:
       "Internal tools, customer portals, marketplaces, and the unglamorous systems that run a business. Built to be handed over, not held hostage.",
     icon: Code2,
-    fromKobo: 150_000_000,
+    fromKobo: 60_000_000,
     timeline: "6 – 16 weeks",
     deliverables: [
       "Written technical scope and fixed quote before work starts",
@@ -35,7 +35,7 @@ export const services: Service[] = [
     summary:
       "Marketing sites, product sites, and web applications designed here and built here — one team, so nothing is lost in the handover.",
     icon: Layout,
-    fromKobo: 45_000_000,
+    fromKobo: 18_000_000,
     timeline: "3 – 8 weeks",
     deliverables: [
       "Brand-aligned design system delivered in Figma",
@@ -51,7 +51,7 @@ export const services: Service[] = [
     summary:
       "A dedicated engineer or small squad inside your team, on a monthly retainer. For companies with a roadmap and no one to build it.",
     icon: Rocket,
-    fromKobo: 120_000_000,
+    fromKobo: 48_000_000,
     timeline: "Monthly retainer, 3-month minimum",
     deliverables: [
       "Named engineers, not a rotating pool",

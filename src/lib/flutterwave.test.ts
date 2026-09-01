@@ -72,7 +72,7 @@ describe("flutterwave", () => {
         email: "learner@example.com",
         amountKobo: 1_800_000,
         reference: "cx_course_ref",
-        callbackUrl: "https://caxtonhub.com/checkout/callback",
+        callbackUrl: "https://caxtondevhub.xyz/checkout/callback",
         metadata: { courseSlug: "frontend-engineering-react-nextjs" },
       });
 
@@ -91,7 +91,7 @@ describe("flutterwave", () => {
         tx_ref: "cx_course_ref",
         amount: 18_000, // naira, not kobo
         currency: "NGN",
-        redirect_url: "https://caxtonhub.com/checkout/callback",
+        redirect_url: "https://caxtondevhub.xyz/checkout/callback",
         customer: { email: "learner@example.com" },
         meta: { courseSlug: "frontend-engineering-react-nextjs" },
       });
@@ -108,7 +108,7 @@ describe("flutterwave", () => {
           email: "learner@example.com",
           amountKobo: 1_800_000,
           reference: "cx_course_ref",
-          callbackUrl: "https://caxtonhub.com/checkout/callback",
+          callbackUrl: "https://caxtondevhub.xyz/checkout/callback",
         }),
       ).rejects.toBeInstanceOf(FlutterwaveError);
       expect(fetchMock).not.toHaveBeenCalled();
@@ -130,7 +130,7 @@ describe("flutterwave", () => {
           email: "learner@example.com",
           amountKobo: 1_800_000,
           reference: "cx_course_ref",
-          callbackUrl: "https://caxtonhub.com/checkout/callback",
+          callbackUrl: "https://caxtondevhub.xyz/checkout/callback",
         }),
       ).rejects.toThrow(new FlutterwaveError("Invalid amount"));
     });

@@ -3,6 +3,7 @@ import type { User } from "@prisma/client";
 
 import { Logo } from "@/components/logo";
 import { DashboardNav, SignOutButton } from "@/components/dashboard-nav";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { Badge } from "@/components/ui/badge";
 import { initials } from "@/lib/utils";
 
@@ -15,12 +16,24 @@ export function AppShell({
   area: "student" | "admin";
   children: React.ReactNode;
 }) {
+  const brand = (
+    <span className="flex items-center gap-3">
+      <Logo />
+      {area === "admin" ? <Badge tone="seal">Admin</Badge> : null}
+    </span>
+  );
+
   return (
     <div className="min-h-dvh bg-mist">
       <div className="mx-auto flex w-full max-w-[88rem] flex-col lg:flex-row">
-        <aside className="border-b border-edge bg-paper lg:min-h-dvh lg:w-64 lg:shrink-0 lg:border-r lg:border-b-0">
-          <div className="sticky top-0 flex h-full flex-col gap-6 p-5">
-            <div className="flex items-center justify-between gap-4">
+        <DashboardSidebar brand={brand}>
+          {/* Below lg this fills the drawer under its header and scrolls on its
+              own. From lg up it is exactly one viewport tall and sticks to the
+              top, so the nav and the account block stay put as the page
+              scrolls — `min-h-full` here made it as tall as the whole page,
+              which left sticky nothing to do. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5 lg:sticky lg:top-0 lg:h-dvh">
+            <div className="hidden items-center justify-between gap-4 lg:flex">
               <Logo />
               {area === "admin" ? <Badge tone="seal">Admin</Badge> : null}
             </div>
@@ -50,7 +63,7 @@ export function AppShell({
               </Link>
             </div>
           </div>
-        </aside>
+        </DashboardSidebar>
 
         <main className="min-w-0 flex-1 px-5 py-8 sm:px-8 lg:px-10 lg:py-10">
           {children}

@@ -18,7 +18,7 @@ export const mentorshipPlans: MentorshipPlan[] = [
     name: "Starter",
     pitch:
       "Enough structure to stop drifting. A mentor who knows your name, your code, and what you are stuck on this week.",
-    priceKobo: 4_500_000,
+    priceKobo: 1_800_000,
     cadence: "per month",
     commitment: "Month to month — cancel any time",
     seats: 20,
@@ -36,7 +36,7 @@ export const mentorshipPlans: MentorshipPlan[] = [
     name: "Momentum",
     pitch:
       "Weekly accountability and real code review. For people who are building something and need a senior engineer in the loop.",
-    priceKobo: 9_500_000,
+    priceKobo: 3_800_000,
     cadence: "per month",
     commitment: "Three-month minimum",
     seats: 10,
@@ -56,7 +56,7 @@ export const mentorshipPlans: MentorshipPlan[] = [
     name: "Career Sprint",
     pitch:
       "Eight weeks, one outcome: a portfolio, a CV, and an interview process you can actually pass.",
-    priceKobo: 18_000_000,
+    priceKobo: 7_200_000,
     cadence: "one-off",
     commitment: "Eight weeks, fixed",
     seats: 6,

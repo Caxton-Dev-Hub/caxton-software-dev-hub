@@ -12,7 +12,7 @@ import { mentorshipPlans, mentorshipProcess } from "@/content/mentorship";
 export const metadata: Metadata = {
   title: "Mentorship",
   description:
-    "One-to-one engineering mentorship from Caxton Software Dev Hub — weekly calls, code review on real pull requests, and an AI study assistant, from ₦45,000 per month.",
+    "One-to-one engineering mentorship from Caxton Software Dev Hub — weekly calls, code review on real pull requests, and an AI study assistant, from ₦18,000 per month.",
 };
 
 export default function MentorshipPage() {
