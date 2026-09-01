@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Check, Circle, Sparkles } from "lucide-react";
+import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowRight, Check, Circle, Sparkles } from "lucide-react";
 
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PageTitle, EmptyState } from "@/components/app-shell";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { courseLessons, getCourse } from "@/content/courses";
@@ -21,8 +22,57 @@ export default async function CourseWorkspacePage({ params }: Params) {
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseSlug: { userId: user.id, courseSlug: slug } },
   });
+
+  // No seat on this course. Say so here rather than redirecting to the public
+  // course page — being thrown out of the dashboard with no message reads as a
+  // bug. A payment still in flight gets its own wording, because the webhook
+  // can trail the redirect back from Flutterwave by a few seconds.
   if (!enrollment || enrollment.status === "CANCELLED") {
-    redirect(`/courses/${slug}`);
+    const pending = await prisma.payment.findFirst({
+      where: { userId: user.id, kind: "COURSE", itemSlug: slug, status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return (
+      <>
+        <Link
+          href="/dashboard/courses"
+          className="inline-flex items-center gap-1.5 font-mono text-[0.6875rem] tracking-[0.16em] text-ink-faint uppercase transition-colors hover:text-forest"
+        >
+          <ArrowLeft className="size-3.5" /> My courses
+        </Link>
+
+        <div className="mt-6">
+          <PageTitle eyebrow="Learning" title={course.title} lead={course.subtitle} />
+        </div>
+
+        {pending ? (
+          <EmptyState
+            title="We are still confirming your payment"
+            body="Your payment has not been confirmed by the bank yet. This usually takes a few seconds. Refresh this page shortly — we will also email you the moment your seat is confirmed."
+            action={
+              <ButtonLink href="/dashboard/payments" variant="secondary">
+                View payments <ArrowRight className="size-4" />
+              </ButtonLink>
+            }
+          />
+        ) : (
+          <EmptyState
+            title={
+              enrollment
+                ? "Your enrolment on this course was cancelled"
+                : "You do not hold a seat on this course yet"
+            }
+            body="The workspace — lessons, progress, and the study assistant — opens as soon as you are enrolled. Cohorts are capped, and you can reserve a seat with a part payment."
+            action={
+              <ButtonLink href={`/courses/${slug}`}>
+                See the course and enrol <ArrowRight className="size-4" />
+              </ButtonLink>
+            }
+          />
+        )}
+      </>
+    );
   }
 
   const progress = await prisma.lessonProgress.findMany({
