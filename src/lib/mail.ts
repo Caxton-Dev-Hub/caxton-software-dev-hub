@@ -55,4 +55,4 @@ export async function sendMail(mail: Mail): Promise<{ delivered: boolean }> {
   return { delivered: true };
 }
 
-export const salesInbox = process.env.MAIL_TO_SALES ?? "hello@caxtonhub.com";
+export const salesInbox = process.env.MAIL_TO_SALES ?? "hello@caxtondevhub.xyz";

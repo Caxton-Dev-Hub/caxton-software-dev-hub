@@ -38,8 +38,8 @@ export const site = {
   },
 
   contact: {
-    email: "hello@caxtonhub.com", // DUMMY
-    training: "training@caxtonhub.com", // DUMMY
+    email: "hello@caxtondevhub.xyz",
+    training: "training@caxtondevhub.xyz",
     phone: "+234 800 000 0000", // DUMMY
     whatsapp: "+234 800 000 0000", // DUMMY
     hours: "Mon – Fri, 9:00 – 18:00 WAT",

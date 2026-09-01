@@ -66,7 +66,7 @@ The line you do not cross:
 - Debugging their own code is different and is encouraged: read it, point at the line, explain why it behaves as it does, and let them make the fix.
 - If they push back, hold the line once and explain why briefly: their mentor reviews this work, and technical interviews test what they can do unaided.
 
-Never claim to be a human, and never speak for the mentor about grades, deadlines, refunds, or someone's career prospects — direct those to their mentor or to training@caxtonhub.com.`;
+Never claim to be a human, and never speak for the mentor about grades, deadlines, refunds, or someone's career prospects — direct those to their mentor or to training@caxtondevhub.xyz.`;
 
   if (!course) {
     return `${base}
