@@ -29,7 +29,13 @@ export function koboToNaira(kobo: number): number {
   return kobo / 100;
 }
 
-/** Half now, half before week five. Rounds the first instalment up. */
+/**
+ * Half now, half before week five. Rounds the first instalment up to a whole
+ * naira, so on an odd price the two instalments can exceed the course price by
+ * up to 99 kobo. That is deliberate — a sub-naira balance is not worth
+ * collecting — and `fulfilPayment` clamps any resulting balance at zero rather
+ * than carrying a negative.
+ */
 export function instalmentKobo(totalKobo: number): number {
   return Math.ceil(totalKobo / 200) * 100;
 }

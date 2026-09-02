@@ -94,12 +94,22 @@ model Enrollment {
   createdAt   DateTime         @default(now())
   completedAt DateTime?
 
+  /// What the learner still owes on this seat, in kobo. Zero for a seat paid
+  /// in full. An instalment plan books half here and clears it when the
+  /// balance is paid, so arrears are answerable with a query rather than by
+  /// reading payment history. Never store money as a float.
+  balanceKobo  Int       @default(0)
+  /// When the balance falls due. Set on an instalment enrolment; null once
+  /// there is nothing left to pay.
+  balanceDueAt DateTime?
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment   Payment? @relation(fields: [paymentId], references: [id])
   paymentId String?  @unique
 
   @@unique([userId, courseSlug])
   @@index([courseSlug])
+  @@index([balanceKobo])
 }
 
 /// Per-lesson completion, keyed by the lesson id in src/content/courses.ts
