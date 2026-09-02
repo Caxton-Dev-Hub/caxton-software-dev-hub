@@ -1,9 +1,15 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clientKey, rateLimit, resetRateLimits, userKey } from "@/lib/rate-limit";
 
 beforeEach(() => {
   resetRateLimits();
+});
+
+afterEach(() => {
+  // Any test that took over the clock must hand it back, or every later test
+  // in this file runs against a frozen `Date.now()`.
+  vi.useRealTimers();
 });
 
 describe("rateLimit", () => {
@@ -25,10 +31,28 @@ describe("rateLimit", () => {
   });
 
   it("starts a fresh window once the old one has expired", () => {
-    expect(rateLimit("k", 1, 1).ok).toBe(true);
-    expect(rateLimit("k", 1, 1).ok).toBe(false);
+    // Time is controlled rather than raced. This test previously used a 1ms
+    // window and expected two consecutive calls to land inside the same
+    // millisecond — which is true almost always and false under load, so it
+    // failed roughly one run in six on a busy machine. Advancing a fake clock
+    // tests the actual behaviour (a window elapsing) instead of the scheduler.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
-    // A zero-length window is already expired on the next call.
+    expect(rateLimit("k", 1, 60_000).ok).toBe(true);
+    expect(rateLimit("k", 1, 60_000).ok).toBe(false);
+
+    // One millisecond short of the window: still refused.
+    vi.setSystemTime(new Date("2026-01-01T00:00:59.999Z"));
+    expect(rateLimit("k", 1, 60_000).ok).toBe(false);
+
+    // The window has now elapsed, so the next request opens a fresh one.
+    vi.setSystemTime(new Date("2026-01-01T00:01:00.000Z"));
+    expect(rateLimit("k", 1, 60_000).ok).toBe(true);
+  });
+
+  it("treats a zero-length window as already expired", () => {
+    // No clock control needed: `resetAt` equals `now`, and the check is `<=`.
     expect(rateLimit("expired", 1, 0).ok).toBe(true);
     expect(rateLimit("expired", 1, 0).ok).toBe(true);
   });
