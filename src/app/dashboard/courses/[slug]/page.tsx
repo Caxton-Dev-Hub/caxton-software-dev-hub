@@ -8,6 +8,11 @@ import { PageTitle, EmptyState } from "@/components/app-shell";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { courseLessons, getCourse } from "@/content/courses";
+import { AI_POLICY_LABEL, assignmentsFor, getScheme } from "@/content/scheme";
+import { SUBMISSION_STATE_LABEL } from "@/lib/assessment";
+import { formatKobo } from "@/lib/money";
+import { formatDate } from "@/lib/utils";
+import { EnrolButton } from "@/components/enrol-button";
 import { toggleLesson } from "./actions";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -75,10 +80,30 @@ export default async function CourseWorkspacePage({ params }: Params) {
     );
   }
 
-  const progress = await prisma.lessonProgress.findMany({
-    where: { userId: user.id, courseSlug: slug },
-  });
+  const [progress, submissions] = await Promise.all([
+    prisma.lessonProgress.findMany({
+      where: { userId: user.id, courseSlug: slug },
+    }),
+    // The latest attempt per assignment is what the learner needs to see. Order
+    // descending and keep the first of each, rather than asking Postgres for a
+    // distinct-on that Prisma would express awkwardly.
+    prisma.submission.findMany({
+      where: { userId: user.id, courseSlug: slug },
+      orderBy: { attempt: "desc" },
+      select: { assignmentId: true, attempt: true, state: true },
+    }),
+  ]);
   const completed = new Set(progress.map((entry) => entry.lessonId));
+
+  const latestByAssignment = new Map<string, (typeof submissions)[number]>();
+  for (const submission of submissions) {
+    if (!latestByAssignment.has(submission.assignmentId)) {
+      latestByAssignment.set(submission.assignmentId, submission);
+    }
+  }
+
+  const scheme = getScheme(slug);
+  const assignments = scheme ? assignmentsFor(scheme) : [];
 
   const total = courseLessons(course).length;
   const percent = total === 0 ? 0 : Math.round((completed.size / total) * 100);
@@ -110,6 +135,32 @@ export default async function CourseWorkspacePage({ params }: Params) {
           <Sparkles className="size-4" /> Ask about this course
         </ButtonLink>
       </div>
+
+      {enrollment.balanceKobo > 0 ? (
+        <div className="mt-8 rounded-lg border border-seal/30 bg-seal-soft p-6">
+          <p className="font-mono text-[0.625rem] tracking-[0.16em] text-ink-faint uppercase">
+            Balance outstanding
+          </p>
+          <p className="mt-2 font-display text-2xl text-ink">
+            {formatKobo(enrollment.balanceKobo)}
+          </p>
+          <p className="mt-2 max-w-xl leading-relaxed text-ink-soft">
+            You paid the first instalment to reserve this seat. The balance is
+            due{" "}
+            {enrollment.balanceDueAt
+              ? `by ${formatDate(enrollment.balanceDueAt)}`
+              : "before week five"}
+            . Your access stays open in the meantime.
+          </p>
+          <EnrolButton
+            kind="course"
+            slug={course.slug}
+            label={`Pay ${formatKobo(enrollment.balanceKobo)} balance`}
+            returnTo={`/dashboard/courses/${course.slug}`}
+            className="mt-5 max-w-xs"
+          />
+        </div>
+      ) : null}
 
       <div className="mt-8 rounded-lg border border-edge bg-paper p-6">
         <div className="flex items-center justify-between font-mono text-[0.6875rem] tracking-wider text-ink-faint uppercase">
@@ -199,13 +250,72 @@ export default async function CourseWorkspacePage({ params }: Params) {
         ))}
       </div>
 
+      {assignments.length > 0 ? (
+        <div className="mt-12">
+          <h2 className="text-xl text-ink">Assignments</h2>
+          <p className="mt-2 max-w-2xl text-ink-soft">
+            These are marked by your mentor against a rubric you can read before
+            you start. Resubmitting after feedback is the normal path, not a
+            penalty.
+          </p>
+
+          <ul className="mt-5 divide-y divide-edge overflow-hidden rounded-lg border border-edge bg-paper">
+            {assignments.map((assignment) => {
+              const latest = latestByAssignment.get(assignment.id);
+              return (
+                <li key={assignment.id}>
+                  <Link
+                    href={`/dashboard/courses/${course.slug}/assignments/${assignment.id}`}
+                    className="flex items-start gap-4 p-5 transition-colors hover:bg-mist"
+                  >
+                    <span className="mt-0.5 shrink-0 font-mono text-[0.6875rem] tracking-[0.16em] text-ink-faint uppercase">
+                      Wk {assignment.week}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[1.0625rem] text-ink">
+                        {assignment.title}
+                      </span>
+                      <span className="mt-1.5 flex flex-wrap items-center gap-2">
+                        <Badge
+                          tone={assignment.aiPolicy === "unaided" ? "neutral" : "green"}
+                        >
+                          {AI_POLICY_LABEL[assignment.aiPolicy]}
+                        </Badge>
+                        {latest ? (
+                          <Badge
+                            tone={
+                              latest.state === "ACCEPTED"
+                                ? "green"
+                                : latest.state === "SUBMITTED"
+                                  ? "neutral"
+                                  : "seal"
+                            }
+                          >
+                            {SUBMISSION_STATE_LABEL[latest.state]}
+                          </Badge>
+                        ) : (
+                          <span className="font-mono text-[0.6875rem] text-ink-faint">
+                            Not handed in
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                    <ArrowRight className="mt-1 size-4 shrink-0 text-ink-faint" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="mt-10 rounded-lg border border-edge bg-paper p-6">
         <h2 className="text-lg text-ink">Live sessions and materials</h2>
         <p className="mt-2 leading-relaxed text-ink-soft">
-          Joining links, recordings, and assignment repositories are posted here
-          each week once your cohort starts on{" "}
-          <span className="text-ink">{course.nextCohort}</span>. Your mentor will
-          email you the week before with everything you need to set up.
+          Joining links and recordings are posted here each week once your cohort
+          starts on <span className="text-ink">{course.nextCohort}</span>. Your
+          mentor will email you the week before with everything you need to set
+          up.
         </p>
       </div>
     </>

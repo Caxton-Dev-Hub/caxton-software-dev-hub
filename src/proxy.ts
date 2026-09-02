@@ -11,6 +11,14 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth";
  */
 const PROTECTED = ["/dashboard", "/admin", "/checkout"];
 
+/**
+ * The one part of the admin area a MENTOR may open. Marking lives under
+ * /admin because it shares the shell, but a mentor has no business in
+ * payments, leads, or enrolment balances — so this is a prefix allow-list
+ * rather than a role check on the whole area.
+ */
+const MARKER_PATHS = ["/admin/submissions"];
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (!PROTECTED.some((prefix) => pathname.startsWith(prefix))) {
@@ -27,7 +35,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (pathname.startsWith("/admin") && session.role !== "ADMIN") {
+  const marking = MARKER_PATHS.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+  const mayEnterAdmin =
+    session.role === "ADMIN" || (marking && session.role === "MENTOR");
+
+  if (pathname.startsWith("/admin") && !mayEnterAdmin) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";

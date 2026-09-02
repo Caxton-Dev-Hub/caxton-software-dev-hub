@@ -13,6 +13,7 @@ import {
   Sparkles,
   UsersRound,
   ClipboardList,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -26,8 +27,11 @@ const studentLinks = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
+// `marker: true` marks the pages a MENTOR may open. Everything else in the
+// admin area is money and pipeline, which a mentor has no business seeing.
 const adminLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/admin/submissions", label: "Marking", icon: ClipboardCheck, marker: true },
   { href: "/admin/enrollments", label: "Enrolments", icon: BookOpen },
   { href: "/admin/bookings", label: "Mentorship", icon: UsersRound },
   { href: "/admin/waitlist", label: "Waitlist", icon: ClipboardList },
@@ -35,15 +39,21 @@ const adminLinks = [
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
 ];
 
+export type NavRole = "STUDENT" | "MENTOR" | "ADMIN";
+
 export function DashboardNav({
   area,
-  isAdmin,
+  role,
 }: {
   area: "student" | "admin";
-  isAdmin: boolean;
+  role: NavRole;
 }) {
   const pathname = usePathname();
-  const links = area === "admin" ? adminLinks : studentLinks;
+  const canMark = role === "MENTOR" || role === "ADMIN";
+  const links =
+    area === "admin"
+      ? adminLinks.filter((link) => role === "ADMIN" || link.marker)
+      : studentLinks;
 
   return (
     <nav className="space-y-1" aria-label={area === "admin" ? "Admin" : "Dashboard"}>
@@ -68,13 +78,23 @@ export function DashboardNav({
         );
       })}
 
-      {isAdmin ? (
+      {canMark ? (
         <Link
-          href={area === "admin" ? "/dashboard" : "/admin"}
+          href={
+            area === "admin"
+              ? "/dashboard"
+              : role === "ADMIN"
+                ? "/admin"
+                : "/admin/submissions"
+          }
           className="mt-4 flex items-center gap-3 rounded-md border border-edge px-3 py-2.5 text-[0.9375rem] text-ink-soft transition-colors hover:border-forest hover:text-forest"
         >
           <Shield className="size-4 shrink-0" />
-          {area === "admin" ? "Student view" : "Admin area"}
+          {area === "admin"
+            ? "Student view"
+            : role === "ADMIN"
+              ? "Admin area"
+              : "Marking"}
         </Link>
       ) : null}
     </nav>

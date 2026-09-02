@@ -19,7 +19,9 @@ export function AppShell({
   const brand = (
     <span className="flex items-center gap-3">
       <Logo />
-      {area === "admin" ? <Badge tone="seal">Admin</Badge> : null}
+      {area === "admin" ? (
+        <Badge tone="seal">{user.role === "ADMIN" ? "Admin" : "Mentor"}</Badge>
+      ) : null}
     </span>
   );
 
@@ -35,10 +37,14 @@ export function AppShell({
           <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5 lg:sticky lg:top-0 lg:h-dvh">
             <div className="hidden items-center justify-between gap-4 lg:flex">
               <Logo />
-              {area === "admin" ? <Badge tone="seal">Admin</Badge> : null}
+              {area === "admin" ? (
+                <Badge tone="seal">
+                  {user.role === "ADMIN" ? "Admin" : "Mentor"}
+                </Badge>
+              ) : null}
             </div>
 
-            <DashboardNav area={area} isAdmin={user.role === "ADMIN"} />
+            <DashboardNav area={area} role={user.role} />
 
             <div className="mt-auto space-y-3 border-t border-edge pt-4">
               <div className="flex items-center gap-3 px-3">

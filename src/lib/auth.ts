@@ -156,3 +156,16 @@ export async function requireAdmin() {
   if (user.role !== "ADMIN") redirect("/dashboard");
   return user;
 }
+
+/**
+ * Marking is a mentor's job, not an administrator's.
+ *
+ * This is the first thing the MENTOR role actually gates. A mentor marks work
+ * and reads the feedback trail; they have no business in payments, leads, or
+ * enrolment balances, and this keeps that separation real rather than notional.
+ */
+export async function requireMarker() {
+  const user = await requireUser();
+  if (user.role !== "MENTOR" && user.role !== "ADMIN") redirect("/dashboard");
+  return user;
+}
