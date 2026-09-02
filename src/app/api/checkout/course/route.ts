@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
+import { rateLimit, userKey } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { courseCheckoutSchema } from "@/lib/validation";
 import { getCourse, isWaitlisted } from "@/content/courses";
@@ -16,6 +17,16 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Please sign in first" }, { status: 401 });
+  }
+
+  // Each call creates a Payment row and hits Flutterwave's API, so this is
+  // metered on the account rather than the IP.
+  const limit = rateLimit(userKey(user.id, "checkout:course"), 10, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "That is a lot of attempts. Give it a moment and try again." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
   }
 
   const parsed = courseCheckoutSchema.safeParse(
@@ -46,7 +57,12 @@ export async function POST(request: Request) {
   const existing = await prisma.enrollment.findUnique({
     where: { userId_courseSlug: { userId: user.id, courseSlug: course.slug } },
   });
-  if (existing && existing.status !== "CANCELLED") {
+  // An active enrolment with a balance is not "already bought" — it is someone
+  // coming back to settle the second instalment, which has to be payable.
+  const settlingBalance = Boolean(
+    existing && existing.status !== "CANCELLED" && existing.balanceKobo > 0,
+  );
+  if (existing && existing.status !== "CANCELLED" && !settlingBalance) {
     return NextResponse.json(
       { redirect: `/dashboard/courses/${course.slug}` },
       { status: 200 },
@@ -63,8 +79,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const amountKobo =
-    parsed.data.plan === "instalment"
+  const amountKobo = settlingBalance
+    ? existing!.balanceKobo
+    : parsed.data.plan === "instalment"
       ? instalmentKobo(course.priceKobo)
       : course.priceKobo;
 
@@ -92,7 +109,7 @@ export async function POST(request: Request) {
         userId: user.id,
         kind: "COURSE",
         courseSlug: course.slug,
-        plan: parsed.data.plan,
+        plan: settlingBalance ? "balance" : parsed.data.plan,
         courseTitle: course.title,
       },
     });

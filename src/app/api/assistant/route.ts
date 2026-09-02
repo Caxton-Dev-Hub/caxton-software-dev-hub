@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { assistantSchema } from "@/lib/validation";
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { rateLimit, userKey } from "@/lib/rate-limit";
 import {
   ASSISTANT_MAX_TOKENS,
   ASSISTANT_MODEL,
@@ -22,7 +22,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please sign in first" }, { status: 401 });
   }
 
-  const limit = rateLimit(clientKey(request, `assistant:${user.id}`), 25, 60_000);
+  // Key on the account alone. Including the IP let one user on a rotating
+  // address get unlimited model calls, which is the expensive thing here.
+  const limit = rateLimit(userKey(user.id, "assistant"), 25, 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "You are sending messages very quickly. Give it a moment." },

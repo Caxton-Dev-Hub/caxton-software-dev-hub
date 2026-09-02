@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { isValidWebhookSignature } from "@/lib/flutterwave";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { verifyAndFulfil } from "@/lib/fulfilment";
 
 /**
@@ -14,6 +15,18 @@ import { verifyAndFulfil } from "@/lib/fulfilment";
  * than trusting a framework body parser to fail loudly.
  */
 export async function POST(request: Request) {
+  // Flutterwave's `verif-hash` is a static secret, so a captured request stays
+  // replayable forever. Fulfilment is idempotent, but each replay still costs
+  // an outbound verification call — cap the blast radius. The ceiling is well
+  // above Flutterwave's own retry cadence for a healthy endpoint.
+  const limit = rateLimit(clientKey(request, "webhook:flutterwave"), 120, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const raw = await request.text();
   const signature = request.headers.get("verif-hash");
 
