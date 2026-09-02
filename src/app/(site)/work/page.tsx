@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
@@ -12,16 +13,20 @@ import { projects } from "@/content/projects";
 export const metadata: Metadata = {
   title: "Selected work",
   description:
-    "Case studies from Caxton Software Dev Hub — logistics, cooperative finance, onchain rewards, and education systems built for Nigerian organisations.",
+    "Case studies from Caxton Software Dev Hub — software built for Nigerian businesses, with the problem, the approach, and the outcome for each.",
 };
 
 export default function WorkPage() {
+  // Pre-launch: there is no delivered work, so there is no page. Better a 404
+  // than a heading over an empty grid.
+  if (projects.length === 0) notFound();
+
   return (
     <>
       <PageHeader
         eyebrow="Selected work"
         title="Systems that replaced a spreadsheet and a WhatsApp group"
-        lead="Four representative engagements. Case studies below are illustrative placeholders pending client sign-off — replace the content in src/content/projects.ts before launch."
+        lead="What we were hired to do, what we built, and what changed for the business afterwards."
       />
 
       <Section tone="paper">
@@ -35,8 +40,7 @@ export default function WorkPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="green">{project.sector}</Badge>
                   <Badge>{project.year}</Badge>
-                  {project.dummy ? <Badge tone="seal">Placeholder</Badge> : null}
-                </div>
+                    </div>
 
                 <h2 className="mt-5 text-2xl leading-snug text-ink">
                   <Link

@@ -3,8 +3,8 @@ import "server-only";
 import type { Payment } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
-import { sendMail } from "@/lib/mail";
-import { getCourse } from "@/content/courses";
+import { salesInbox, sendMail } from "@/lib/mail";
+import { getCourse, type Course } from "@/content/courses";
 import { getPlan } from "@/content/mentorship";
 import { formatKobo } from "@/lib/money";
 import { verifyTransaction } from "@/lib/flutterwave";
@@ -25,6 +25,14 @@ export async function fulfilPayment(payment: Payment): Promise<Payment> {
     });
 
     if (paid.kind === "COURSE") {
+      // A part payment still opens the seat — that is the deal on the
+      // instalment plan — but it must record what is still owed, or a learner
+      // who paid half is indistinguishable from one who paid in full.
+      const course = getCourse(paid.itemSlug);
+      const outstanding = course
+        ? Math.max(0, course.priceKobo - paid.amountKobo)
+        : 0;
+
       await tx.enrollment.upsert({
         where: {
           userId_courseSlug: { userId: paid.userId, courseSlug: paid.itemSlug },
@@ -34,8 +42,26 @@ export async function fulfilPayment(payment: Payment): Promise<Payment> {
           courseSlug: paid.itemSlug,
           paymentId: paid.id,
           status: "ACTIVE",
+          balanceKobo: outstanding,
+          balanceDueAt: outstanding > 0 ? balanceDueAt(course) : null,
         },
-        update: { status: "ACTIVE" },
+        update: {
+          status: "ACTIVE",
+          // Settling the balance is a second payment against the same course.
+          // Decrement rather than overwrite so the two payments compose.
+          balanceKobo: { decrement: paid.amountKobo },
+        },
+      });
+
+      // A decrement can overshoot if someone overpays; never leave it negative,
+      // and clear the due date once there is nothing left to collect.
+      await tx.enrollment.updateMany({
+        where: {
+          userId: paid.userId,
+          courseSlug: paid.itemSlug,
+          balanceKobo: { lte: 0 },
+        },
+        data: { balanceKobo: 0, balanceDueAt: null },
       });
     }
 
@@ -59,6 +85,18 @@ export async function fulfilPayment(payment: Payment): Promise<Payment> {
   );
 
   return updated;
+}
+
+
+/**
+ * The balance falls due before week five, per the published terms
+ * (src/content/legal.ts and the courses FAQ). Dated from the moment the seat
+ * is taken rather than from the cohort start, because that is the date we can
+ * actually compute here.
+ */
+function balanceDueAt(course: Course | undefined): Date {
+  const weeks = Math.min(4, course?.weeks ?? 4);
+  return new Date(Date.now() + weeks * 7 * 24 * 60 * 60 * 1000);
 }
 
 async function notifyCustomer(payment: Payment) {
@@ -115,9 +153,28 @@ export async function verifyAndFulfil(reference: string): Promise<{
 
   // Never trust the amount from the browser — compare against what we recorded.
   if (transaction.amount !== payment.amountKobo) {
+    // This is a fraud signal, not routine noise: the provider settled an
+    // amount we never quoted. Mail it to the desk as well as logging it,
+    // because nobody reads the function logs on a normal day.
     console.error(
       `Amount mismatch on ${reference}: expected ${payment.amountKobo}, Flutterwave reported ${transaction.amount}`,
     );
+    await sendMail({
+      to: salesInbox,
+      subject: `URGENT: payment amount mismatch — ${reference}`,
+      text: [
+        "A payment settled for an amount this application never quoted.",
+        "The payment has been marked FAILED and nothing was fulfilled.",
+        "",
+        `Reference:  ${reference}`,
+        `Expected:   ${formatKobo(payment.amountKobo)} (${payment.amountKobo} kobo)`,
+        `Reported:   ${formatKobo(transaction.amount)} (${transaction.amount} kobo)`,
+        `User id:    ${payment.userId}`,
+        `Item:       ${payment.kind} / ${payment.itemSlug}`,
+        "",
+        "Check this against the Flutterwave dashboard before refunding or fulfilling by hand.",
+      ].join("\n"),
+    }).catch((error) => console.error("Could not send mismatch alert", error));
     const failed = await prisma.payment.update({
       where: { id: payment.id },
       data: { status: "FAILED", rawResponse: transaction as never },

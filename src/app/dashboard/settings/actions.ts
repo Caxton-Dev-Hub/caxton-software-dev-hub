@@ -70,10 +70,25 @@ export async function changePassword(
   const valid = await verifyPassword(parsed.data.current, user.passwordHash);
   if (!valid) return { error: "That is not your current password." };
 
-  await prisma.user.update({
+  // Changing a password must sign out everywhere else. Sessions are stateless
+  // JWTs, so bump the revocation mark rather than deleting rows...
+  const now = new Date();
+  const updated = await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: await hashPassword(parsed.data.next) },
+    data: {
+      passwordHash: await hashPassword(parsed.data.next),
+      sessionsValidFrom: now,
+    },
   });
 
-  return { ok: "Password changed." };
+  // ...which also invalidates the cookie in this browser, so reissue it. The
+  // new token's `iat` is at or after the mark we just set.
+  await createSessionCookie({
+    sub: updated.id,
+    email: updated.email,
+    name: updated.name,
+    role: updated.role,
+  });
+
+  return { ok: "Password changed. Any other signed-in devices were signed out." };
 }

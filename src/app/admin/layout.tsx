@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { AppShell } from "@/components/app-shell";
-import { requireAdmin } from "@/lib/auth";
+import { requireMarker } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -13,7 +13,11 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireAdmin();
+  // The layout admits mentors as well as administrators, because marking
+  // lives in here. Every page still runs its own guard — `requireAdmin` on the
+  // money and pipeline pages, `requireMarker` on the marking queue — so this
+  // widening does not expose anything on its own.
+  const user = await requireMarker();
   return (
     <AppShell user={user} area="admin">
       {children}

@@ -6,6 +6,8 @@ import { getCourse } from "@/content/courses";
 import { getPlan } from "@/content/mentorship";
 import { formatKobo } from "@/lib/money";
 import { formatDateTime } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
+import { PER_PAGE, paginate, parsePage } from "@/lib/pagination";
 
 const tone = {
   PAID: "green",
@@ -15,15 +17,27 @@ const tone = {
   REFUNDED: "neutral",
 } as const;
 
-export default async function AdminPaymentsPage() {
+type Params = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminPaymentsPage({ searchParams }: Params) {
   await requireAdmin();
+
+  const query = await searchParams;
+  const total = await prisma.payment.count();
+  const info = paginate(total, parsePage(query.page), PER_PAGE);
 
   const [payments, totals] = await Promise.all([
     prisma.payment.findMany({
       orderBy: { createdAt: "desc" },
-      take: 200,
+      skip: info.skip,
+      take: info.take,
       include: { user: { select: { name: true, email: true } } },
     }),
+    // Deliberately unpaginated: the summary is of every payment ever taken,
+    // not of the twenty rows on screen. A total that changed as you turned the
+    // page would be worse than no total at all.
     prisma.payment.groupBy({
       by: ["status"],
       _sum: { amountKobo: true },
@@ -36,7 +50,7 @@ export default async function AdminPaymentsPage() {
       <PageTitle
         eyebrow="Admin"
         title="Payments"
-        lead="The 200 most recent transactions. Every amount is stored in kobo and shown in naira."
+        lead="Every transaction, newest first. Amounts are stored in kobo and shown in naira."
       />
 
       <dl className="mb-6 grid gap-px overflow-hidden rounded-lg border border-edge bg-edge sm:grid-cols-2 lg:grid-cols-4">
@@ -110,6 +124,12 @@ export default async function AdminPaymentsPage() {
           </table>
         </div>
       )}
+      <Pagination
+        info={info}
+        basePath="/admin/payments"
+        params={query}
+        label="payments"
+      />
     </>
   );
 }

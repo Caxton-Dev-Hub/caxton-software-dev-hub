@@ -30,6 +30,39 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm typecheck
 
+  migrations:
+    name: Migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # The migration history must actually apply to an empty database...
+      - run: pnpm exec prisma migrate deploy
+      # ...and must leave it matching schema.prisma. A non-empty diff means
+      # someone edited the schema without generating a migration.
+      - name: Check for schema drift
+        run: |
+          pnpm exec prisma migrate diff \
+            --from-schema-datasource prisma/schema.prisma \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code && echo "No drift." || {
+              echo "::error::schema.prisma does not match the migration history."
+              exit 1
+            }
+
   test:
     name: Test
     runs-on: ubuntu-latest

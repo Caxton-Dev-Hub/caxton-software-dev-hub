@@ -57,6 +57,6 @@ export const clientFaqs: Faq[] = [
   {
     question: "Do you work with clients outside Kaduna?",
     answer:
-      "Most of our clients are elsewhere — Abuja, Lagos, and outside Nigeria. Discovery can happen over video, and we travel for on-site work where the project justifies it.",
+      "Yes. We are based in Kaduna, but the work does not have to be. Discovery happens over video, we demo weekly, and we travel for on-site work where the project justifies it.",
   },
 ];

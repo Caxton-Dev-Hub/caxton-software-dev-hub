@@ -63,6 +63,23 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en-NG" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+      <head>
+        {/*
+         * Opt in to scroll-reveal animation before first paint.
+         *
+         * The hidden state lives behind this class (see globals.css), so if
+         * JavaScript is off, or the reader has asked their system for reduced
+         * motion, the class is never added and every section renders plainly
+         * visible. Running it here rather than in an effect avoids the flash
+         * of content appearing and then being hidden again on hydration.
+         */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('js-motion')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-dvh antialiased">
         <a
           href="#main"

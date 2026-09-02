@@ -196,9 +196,40 @@ Two things the code deliberately does not trust:
    `https://your-domain.com/dev-hub/api/flutterwave/webhook`
 3. Test with Flutterwave's test cards before going live
 
+> **Do not "tidy" the webhook path.** It lives under `/dev-hub/api/...` rather
+> than `/api/...` deliberately — the unusual prefix keeps it off the paths that
+> get scanned by default. Moving it to `/api/flutterwave/webhook` for
+> consistency silently breaks payments: Flutterwave keeps POSTing to the old
+> URL, those calls 404, and fulfilment then depends entirely on the customer
+> completing the browser callback. If you must move it, update the dashboard
+> webhook URL in the same change.
+
 **Switching provider:** everything provider-specific is in
 `src/lib/flutterwave.ts` plus the webhook route. Nothing else references
 Flutterwave by name.
+
+---
+
+## Instalment payments
+
+A cohort course can be paid in full or in two instalments (50% to reserve the
+seat, the balance before week five — see `src/content/legal.ts`).
+
+The balance is tracked on the **enrolment**, not inferred from payment history:
+
+- `Enrollment.balanceKobo` — what is still owed, in kobo. `0` on a seat paid in
+  full, so "who owes money" is an indexed query rather than a reconciliation.
+- `Enrollment.balanceDueAt` — when it falls due. `null` once nothing is owed.
+
+A part payment **does** open the seat — that is the deal being sold — but
+`fulfilPayment` records the shortfall against the course's catalogue price. A
+learner returning to settle up hits the same checkout endpoint; it detects the
+outstanding balance, charges exactly that, and `fulfilPayment` decrements it,
+clamping at zero. Outstanding balances (and anything overdue) are summarised at
+the top of **Admin → Enrolments**.
+
+Because the balance is derived from `priceKobo` in `src/content/courses.ts`,
+changing a course price does not retroactively alter debts already recorded.
 
 ---
 

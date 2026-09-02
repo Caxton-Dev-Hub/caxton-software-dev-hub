@@ -18,15 +18,40 @@ import { CourseCard } from "@/components/course-card";
 import { ProcessList } from "@/components/process-list";
 import { TestimonialGrid } from "@/components/testimonials";
 import { Guilloche } from "@/components/guilloche";
+import { Reveal } from "@/components/reveal";
 
 import { courses, getCourse } from "@/content/courses";
 import { mentorshipPlans } from "@/content/mentorship";
 import { deliveryProcess, services } from "@/content/services";
+import { projects } from "@/content/projects";
 import { guarantees, site, testimonials } from "@/content/site";
 import { formatKobo } from "@/lib/money";
 
 export default function HomePage() {
   const featured = courses.filter((course) => course.featured).slice(0, 3);
+  const recentWork = projects.slice(0, 3);
+
+  /*
+   * The bands actually rendered, in order. Two of them are conditional — Work
+   * and Testimonials appear only when there is real content behind them — so
+   * the numerals shown beside each heading are derived rather than written in
+   * by hand. Hard-coded numbers would read "01, 02, 04" the moment a band
+   * dropped out, which looks like a bug and undermines the point of numbering
+   * them at all.
+   */
+  const bands = [
+    "start",
+    "services",
+    ...(recentWork.length > 0 ? ["work"] : []),
+    "process",
+    "trust",
+    "courses",
+    "assistant",
+    "mentorship",
+    ...(testimonials.length > 0 ? ["testimonials"] : []),
+  ];
+  const bandIndex = (id: string) =>
+    String(bands.indexOf(id) + 1).padStart(2, "0");
 
   return (
     <>
@@ -85,100 +110,128 @@ export default function HomePage() {
       {/* ── Metrics band ─────────────────────────────────────── */}
       <div className="border-b border-edge bg-paper">
         <Container>
-          <dl className="grid grid-cols-2 gap-px bg-edge lg:grid-cols-4">
-            {site.metrics.map((metric) => (
-              <div key={metric.label} className="bg-paper px-2 py-8 text-center">
-                <dt className="sr-only">{metric.label}</dt>
-                <dd>
+          <dl className="grid gap-px bg-edge sm:grid-cols-3">
+            {site.proofPoints.map((fact) => {
+              const body = (
+                <>
                   <span className="block font-display text-3xl text-forest sm:text-4xl">
-                    {metric.value}
+                    {fact.value}
                   </span>
                   <span className="mt-2 block font-mono text-[0.6875rem] tracking-[0.16em] text-ink-faint uppercase">
-                    {metric.label}
+                    {fact.label}
                   </span>
-                </dd>
-              </div>
-            ))}
+                </>
+              );
+              const external = "href" in fact && fact.href.startsWith("http");
+
+              return (
+                <div key={fact.label} className="bg-paper text-center">
+                  <dt className="sr-only">{fact.label}</dt>
+                  <dd>
+                    {"href" in fact ? (
+                      // A fact you are invited to go and check is worth more
+                      // than one you are asked to believe, so the two that can
+                      // be checked are links.
+                      <Link
+                        href={fact.href}
+                        {...(external
+                          ? { target: "_blank", rel: "noreferrer" }
+                          : {})}
+                        className="block px-2 py-8 transition-colors hover:bg-mint/40"
+                      >
+                        {body}
+                      </Link>
+                    ) : (
+                      <div className="px-2 py-8">{body}</div>
+                    )}
+                  </dd>
+                </div>
+              );
+            })}
           </dl>
         </Container>
       </div>
 
       {/* ── Two audiences ────────────────────────────────────── */}
-      <Section tone="paper">
-        <Container>
-          <SectionHeading
-            eyebrow="Two ways in"
-            title="Whichever side of the desk you are on"
-            lead="Most people arrive here for one of two reasons. Pick the one that describes you and we will keep the rest out of your way."
-          />
+      <Section id="start" tone="paper">
+        <Reveal>
+          <Container>
+            <SectionHeading
+              index={bandIndex("start")}
+              eyebrow="Two ways in"
+              title="Whichever side of the desk you are on"
+              lead="Most people arrive here for one of two reasons. Pick the one that describes you and we will keep the rest out of your way."
+            />
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-2">
-            <Link
-              href="/services"
-              className="group relative flex flex-col overflow-hidden rounded-lg border border-edge bg-paper p-8 transition-colors hover:border-forest/45"
-            >
-              <span className="inline-flex size-11 items-center justify-center rounded-md bg-mint text-forest">
-                <Briefcase className="size-5" />
-              </span>
-              <h3 className="mt-5 text-2xl text-ink">You need software built</h3>
-              <p className="mt-3 flex-1 leading-relaxed text-ink-soft">
-                Websites, internal tools, customer portals, onchain products. Fixed
-                scope and fixed price agreed before work starts, a working demo
-                every Friday, and the repository in your name from the first commit.
-              </p>
-              <ul className="mt-6 space-y-2">
-                {["Fixed written quote after discovery", "Weekly demos, no status theatre", "30 days of free fixes after launch"].map(
-                  (item) => (
-                    <li key={item} className="flex gap-2.5 text-[0.9375rem] text-ink-soft">
-                      <Check className="mt-1 size-4 shrink-0 text-signal" strokeWidth={2.5} />
-                      {item}
-                    </li>
-                  ),
-                )}
-              </ul>
-              <span className="mt-7 inline-flex items-center gap-1.5 font-medium text-forest transition-transform group-hover:translate-x-1">
-                See what we build <ArrowRight className="size-4" />
-              </span>
-            </Link>
+            <div className="mt-12 grid gap-6 lg:grid-cols-2">
+              <Link
+                href="/services"
+                className="group relative flex flex-col overflow-hidden rounded-lg border border-edge bg-paper p-8 transition-colors hover:border-forest/45"
+              >
+                <span className="inline-flex size-11 items-center justify-center rounded-md bg-mint text-forest">
+                  <Briefcase className="size-5" />
+                </span>
+                <h3 className="mt-5 text-2xl text-ink">You need software built</h3>
+                <p className="mt-3 flex-1 leading-relaxed text-ink-soft">
+                  Websites, internal tools, customer portals, onchain products. Fixed
+                  scope and fixed price agreed before work starts, a working demo
+                  every Friday, and the repository in your name from the first commit.
+                </p>
+                <ul className="mt-6 space-y-2">
+                  {["Fixed written quote after discovery", "Weekly demos, no status theatre", "30 days of free fixes after launch"].map(
+                    (item) => (
+                      <li key={item} className="flex gap-2.5 text-[0.9375rem] text-ink-soft">
+                        <Check className="mt-1 size-4 shrink-0 text-signal" strokeWidth={2.5} />
+                        {item}
+                      </li>
+                    ),
+                  )}
+                </ul>
+                <span className="mt-7 inline-flex items-center gap-1.5 font-medium text-forest transition-transform group-hover:translate-x-1">
+                  See what we build <ArrowRight className="size-4" />
+                </span>
+              </Link>
 
-            <Link
-              href="/courses"
-              className="group relative flex flex-col overflow-hidden rounded-lg border border-edge bg-forest-deep p-8 text-white transition-colors hover:border-signal"
-            >
-              <span className="inline-flex size-11 items-center justify-center rounded-md bg-white/10 text-signal">
-                <GraduationCap className="size-5" />
-              </span>
-              <h3 className="mt-5 text-2xl text-white">
-                You want to become an engineer
-              </h3>
-              <p className="mt-3 flex-1 leading-relaxed text-mint/75">
-                Cohort courses and one-to-one mentorship in frontend, backend,
-                Cairo and Starknet, and design. Taught by people who ship client
-                work in the same week they teach it.
-              </p>
-              <ul className="mt-6 space-y-2">
-                {["Live cohorts with capped seat numbers", "Code review on your real pull requests", "AI study assistant included on every plan"].map(
-                  (item) => (
-                    <li key={item} className="flex gap-2.5 text-[0.9375rem] text-mint/75">
-                      <Check className="mt-1 size-4 shrink-0 text-signal" strokeWidth={2.5} />
-                      {item}
-                    </li>
-                  ),
-                )}
-              </ul>
-              <span className="mt-7 inline-flex items-center gap-1.5 font-medium text-signal transition-transform group-hover:translate-x-1">
-                See the courses <ArrowRight className="size-4" />
-              </span>
-            </Link>
-          </div>
-        </Container>
+              <Link
+                href="/courses"
+                className="group relative flex flex-col overflow-hidden rounded-lg border border-edge bg-forest-deep p-8 text-white transition-colors hover:border-signal"
+              >
+                <span className="inline-flex size-11 items-center justify-center rounded-md bg-white/10 text-signal">
+                  <GraduationCap className="size-5" />
+                </span>
+                <h3 className="mt-5 text-2xl text-white">
+                  You want to become an engineer
+                </h3>
+                <p className="mt-3 flex-1 leading-relaxed text-mint/75">
+                  Cohort courses and one-to-one mentorship in frontend, backend,
+                  Cairo and Starknet, and design. Taught by people who ship client
+                  work in the same week they teach it.
+                </p>
+                <ul className="mt-6 space-y-2">
+                  {["Live cohorts with capped seat numbers", "Code review on your real pull requests", "AI study assistant included on every plan"].map(
+                    (item) => (
+                      <li key={item} className="flex gap-2.5 text-[0.9375rem] text-mint/75">
+                        <Check className="mt-1 size-4 shrink-0 text-signal" strokeWidth={2.5} />
+                        {item}
+                      </li>
+                    ),
+                  )}
+                </ul>
+                <span className="mt-7 inline-flex items-center gap-1.5 font-medium text-signal transition-transform group-hover:translate-x-1">
+                  See the courses <ArrowRight className="size-4" />
+                </span>
+              </Link>
+            </div>
+          </Container>
+        </Reveal>
       </Section>
 
       {/* ── Services ─────────────────────────────────────────── */}
-      <Section tone="mist">
+      <Section id="services" tone="mist">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-6">
             <SectionHeading
+              index={bandIndex("services")}
               eyebrow="Services"
               title="What we are hired to do"
               lead="Four things, done properly, rather than a list of everything a computer can do."
@@ -188,7 +241,7 @@ export default function HomePage() {
             </ButtonLink>
           </div>
 
-          <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-edge bg-edge sm:grid-cols-2">
+          <Reveal stagger className="mt-12 grid gap-px overflow-hidden rounded-lg border border-edge bg-edge sm:grid-cols-2">
             {services.map((service) => (
               <Link
                 key={service.slug}
@@ -211,84 +264,145 @@ export default function HomePage() {
                 </p>
               </Link>
             ))}
-          </div>
+          </Reveal>
         </Container>
       </Section>
 
+      {/* ── Work ─────────────────────────────────────────────
+          Renders only when there is delivered work to show. Caxton is
+          pre-launch, so today this band is absent rather than filled with
+          illustrative case studies. Adding the first entry to
+          src/content/projects.ts brings it back. */}
+      {recentWork.length > 0 ? (
+        <Section id="work" tone="paper">
+          <Container>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <SectionHeading
+                index={bandIndex("work")}
+                eyebrow="Work"
+                title="What we have shipped"
+                lead="Three recent engagements. Each one replaced a process that was costing somebody money every week."
+              />
+              <ButtonLink href="/work" variant="secondary">
+                All case studies <ArrowUpRight className="size-4" />
+              </ButtonLink>
+            </div>
+  
+            <Reveal stagger className="mt-12 grid gap-px overflow-hidden rounded-lg border border-edge bg-edge lg:grid-cols-3">
+              {recentWork.map((project) => (
+                <Link
+                  key={project.slug}
+                  href={`/work/${project.slug}`}
+                  className="group flex flex-col bg-paper p-7 transition-colors hover:bg-mint/40"
+                >
+                  <span className="flex flex-wrap items-center gap-2">
+                    <Badge tone="green">{project.sector}</Badge>
+                    <span className="font-mono text-[0.6875rem] tracking-wider text-ink-faint uppercase">
+                      {project.year}
+                    </span>
+                    </span>
+                  <h3 className="mt-5 text-xl text-ink">{project.title}</h3>
+                  <p className="mt-2 font-mono text-[0.6875rem] tracking-wider text-ink-faint uppercase">
+                    {project.client}
+                  </p>
+                  <p className="mt-4 flex-1 text-[0.9375rem] leading-relaxed text-ink-soft">
+                    {project.summary}
+                  </p>
+                  <p className="mt-6 flex items-center gap-2 border-t border-edge pt-4 font-mono text-[0.6875rem] tracking-[0.14em] text-forest uppercase">
+                    Read the case study
+                    <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </p>
+                </Link>
+              ))}
+            </Reveal>
+          </Container>
+        </Section>
+      ) : null}
+
       {/* ── Process ──────────────────────────────────────────── */}
-      <Section tone="paper">
-        <Container>
-          <SectionHeading
-            eyebrow="How a project runs"
-            title="No mysteries between the deposit and the launch"
-            lead="Every engagement follows the same four stages. You always know which one you are in and what comes next."
-          />
-          <div className="mt-12">
-            <ProcessList steps={deliveryProcess} />
-          </div>
-        </Container>
+      <Section id="process" tone="paper">
+        <Reveal>
+          <Container>
+            <SectionHeading
+              index={bandIndex("process")}
+              eyebrow="How a project runs"
+              title="No mysteries between the deposit and the launch"
+              lead="Every engagement follows the same four stages. You always know which one you are in and what comes next."
+            />
+            <div className="mt-12">
+              <ProcessList steps={deliveryProcess} />
+            </div>
+          </Container>
+        </Reveal>
       </Section>
 
       {/* ── Guarantees ───────────────────────────────────────── */}
-      <Section tone="mist">
-        <Container>
-          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
-            <div className="lg:col-span-5">
-              <SectionHeading
-                eyebrow="Why people trust us with a deposit"
-                title="The four promises we put in every contract"
-                lead="Nigerian businesses have good reason to be careful with software vendors. These are written commitments, not marketing lines."
-              />
-              <ButtonLink href="/verify" variant="secondary" className="mt-8">
-                <ShieldCheck className="size-4" />
-                Verify our registration
-              </ButtonLink>
-            </div>
+      <Section id="trust" tone="mist">
+        <Reveal>
+          <Container>
+            <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+              <div className="lg:col-span-5">
+                <SectionHeading
+                  index={bandIndex("trust")}
+                  eyebrow="Why people trust us with a deposit"
+                  title="The four promises we put in every contract"
+                  lead="Nigerian businesses have good reason to be careful with software vendors. These are written commitments, not marketing lines."
+                />
+                <ButtonLink href="/verify" variant="secondary" className="mt-8">
+                  <ShieldCheck className="size-4" />
+                  Verify our registration
+                </ButtonLink>
+              </div>
 
-            <ul className="grid gap-px overflow-hidden rounded-lg border border-edge bg-edge sm:grid-cols-2 lg:col-span-7">
-              {guarantees.map((item) => (
-                <li key={item.title} className="bg-paper p-6">
-                  <Check className="size-5 text-signal" strokeWidth={2.5} />
-                  <h3 className="mt-4 text-lg text-ink">{item.title}</h3>
-                  <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">
-                    {item.body}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Container>
+              <ul className="grid gap-px overflow-hidden rounded-lg border border-edge bg-edge sm:grid-cols-2 lg:col-span-7">
+                {guarantees.map((item) => (
+                  <li key={item.title} className="bg-paper p-6">
+                    <Check className="size-5 text-signal" strokeWidth={2.5} />
+                    <h3 className="mt-4 text-lg text-ink">{item.title}</h3>
+                    <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">
+                      {item.body}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Container>
+        </Reveal>
       </Section>
 
       {/* ── Courses ──────────────────────────────────────────── */}
-      <Section tone="paper">
-        <Container>
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <SectionHeading
-              eyebrow="Training"
-              title="Cohorts that end with you employable"
-              lead="Small groups, capped seats, and real code review. Every course finishes with deployed work you can show someone."
-            />
-            <ButtonLink href="/courses" variant="secondary">
-              All courses <ArrowUpRight className="size-4" />
-            </ButtonLink>
-          </div>
+      <Section id="courses" tone="paper">
+        <Reveal>
+          <Container>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <SectionHeading
+                index={bandIndex("courses")}
+                eyebrow="Training"
+                title="Cohorts that end with you employable"
+                lead="Small groups, capped seats, and real code review. Every course finishes with deployed work you can show someone."
+              />
+              <ButtonLink href="/courses" variant="secondary">
+                All courses <ArrowUpRight className="size-4" />
+              </ButtonLink>
+            </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {featured.map((course) => (
-              <CourseCard key={course.slug} course={course} />
-            ))}
-          </div>
-        </Container>
+            <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {featured.map((course) => (
+                <CourseCard key={course.slug} course={course} />
+              ))}
+            </div>
+          </Container>
+        </Reveal>
       </Section>
 
       {/* ── AI-assisted learning ─────────────────────────────── */}
-      <Section tone="ink">
+      <Section id="assistant" tone="ink">
         <Container>
           <div className="grid gap-14 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-6">
               <SectionHeading
                 onDark
+                index={bandIndex("assistant")}
                 eyebrow="AI-assisted learning"
                 title="A tutor at 1am. A mentor on Tuesday."
                 lead="Every course and mentorship plan includes a study assistant scoped to your curriculum — it knows which module you are in and what you are meant to be able to do by Friday."
@@ -374,65 +488,74 @@ export default function HomePage() {
       </Section>
 
       {/* ── Mentorship ───────────────────────────────────────── */}
-      <Section tone="paper">
-        <Container>
-          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
-            <div className="lg:col-span-5">
-              <SectionHeading
-                eyebrow="Mentorship"
-                title="One engineer, in your corner, weekly"
-                lead="For people who have the material and not the momentum. Your mentor reads your code before the call, so the call is spent on the hard part."
-              />
-              <ButtonLink href="/mentorship" className="mt-8">
-                Compare plans <ArrowRight className="size-4" />
-              </ButtonLink>
+      <Section id="mentorship" tone="paper">
+        <Reveal>
+          <Container>
+            <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+              <div className="lg:col-span-5">
+                <SectionHeading
+                  index={bandIndex("mentorship")}
+                  eyebrow="Mentorship"
+                  title="One engineer, in your corner, weekly"
+                  lead="For people who have the material and not the momentum. Your mentor reads your code before the call, so the call is spent on the hard part."
+                />
+                <ButtonLink href="/mentorship" className="mt-8">
+                  Compare plans <ArrowRight className="size-4" />
+                </ButtonLink>
+              </div>
+
+              <ul className="grid gap-px overflow-hidden rounded-lg border border-edge bg-edge lg:col-span-7">
+                {mentorshipPlans.map((plan) => (
+                  <li key={plan.slug}>
+                    <Link
+                      href={`/mentorship/${plan.slug}`}
+                      className="group flex flex-wrap items-center justify-between gap-4 bg-paper p-6 transition-colors hover:bg-mint/40"
+                    >
+                      <div className="min-w-0">
+                        <h3 className="flex items-center gap-2.5 text-lg text-ink">
+                          {plan.name}
+                          {plan.featured ? <Badge tone="green">Most chosen</Badge> : null}
+                        </h3>
+                        <p className="mt-1.5 max-w-md text-[0.9375rem] text-ink-soft">
+                          {plan.bestFor}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="block font-display text-xl text-ink">
+                          {formatKobo(plan.priceKobo)}
+                        </span>
+                        <span className="font-mono text-[0.625rem] tracking-[0.14em] text-ink-faint uppercase">
+                          {plan.cadence}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-
-            <ul className="grid gap-px overflow-hidden rounded-lg border border-edge bg-edge lg:col-span-7">
-              {mentorshipPlans.map((plan) => (
-                <li key={plan.slug}>
-                  <Link
-                    href={`/mentorship/${plan.slug}`}
-                    className="group flex flex-wrap items-center justify-between gap-4 bg-paper p-6 transition-colors hover:bg-mint/40"
-                  >
-                    <div className="min-w-0">
-                      <h3 className="flex items-center gap-2.5 text-lg text-ink">
-                        {plan.name}
-                        {plan.featured ? <Badge tone="green">Most chosen</Badge> : null}
-                      </h3>
-                      <p className="mt-1.5 max-w-md text-[0.9375rem] text-ink-soft">
-                        {plan.bestFor}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="block font-display text-xl text-ink">
-                        {formatKobo(plan.priceKobo)}
-                      </span>
-                      <span className="font-mono text-[0.625rem] tracking-[0.14em] text-ink-faint uppercase">
-                        {plan.cadence}
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Container>
+          </Container>
+        </Reveal>
       </Section>
 
-      {/* ── Testimonials ─────────────────────────────────────── */}
-      <Section tone="mist">
-        <Container>
-          <SectionHeading
-            eyebrow="In their words"
-            title="Clients and graduates"
-            lead="Quotes below are illustrative placeholders pending permission to publish names — replace before launch."
-          />
-          <div className="mt-12">
-            <TestimonialGrid items={testimonials} />
-          </div>
-        </Container>
+      {/* ── Testimonials ─────────────────────────────────────
+          Absent until there are real, attributable quotes. See
+          src/content/site.ts. */}
+      {testimonials.length > 0 ? (
+      <Section id="testimonials" tone="mist">
+        <Reveal>
+          <Container>
+            <SectionHeading
+              index={bandIndex("testimonials")}
+              eyebrow="In their words"
+              title="Clients and graduates"
+            />
+            <div className="mt-12">
+              <TestimonialGrid items={testimonials} />
+            </div>
+          </Container>
+        </Reveal>
       </Section>
+      ) : null}
 
       {/* ── Closing CTA ──────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-forest">

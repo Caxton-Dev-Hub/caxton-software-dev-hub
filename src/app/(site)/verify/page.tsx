@@ -44,8 +44,8 @@ const steps = [
   },
   {
     step: "04",
-    title: "Ask us for a reference",
-    body: "Request a current client we have delivered for, and call them. We will supply one before you sign anything. A vendor who cannot is telling you something.",
+    title: "Ask us what we have not done",
+    body: "We are a new studio, and we will say so rather than let you find out. Ask how many projects like yours we have delivered, and hold us to the answer. Once we have clients who agree to speak to you, this is where their names will be.",
   },
 ];
 

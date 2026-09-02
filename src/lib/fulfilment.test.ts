@@ -4,7 +4,7 @@ import type { Payment } from "@prisma/client";
 const { prismaMock, txMock } = vi.hoisted(() => {
   const txMock = {
     payment: { update: vi.fn() },
-    enrollment: { upsert: vi.fn() },
+    enrollment: { upsert: vi.fn(), updateMany: vi.fn() },
     mentorshipBooking: { findFirst: vi.fn(), update: vi.fn() },
   };
   const prismaMock = {
@@ -17,9 +17,21 @@ const { prismaMock, txMock } = vi.hoisted(() => {
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/flutterwave", () => ({ verifyTransaction: vi.fn() }));
-vi.mock("@/lib/mail", () => ({ sendMail: vi.fn().mockResolvedValue({ delivered: true }) }));
+vi.mock("@/lib/mail", () => ({
+  sendMail: vi.fn().mockResolvedValue({ delivered: true }),
+  salesInbox: "hello@example.test",
+}));
 
 import { fulfilPayment, verifyAndFulfil } from "@/lib/fulfilment";
+import { instalmentKobo } from "@/lib/money";
+import { getCourse } from "@/content/courses";
+
+const COURSE_SLUG = "frontend-engineering-react-nextjs";
+/**
+ * Read from the catalogue rather than hardcoded: the balance is derived from
+ * the real price, so a price change must not silently invalidate these tests.
+ */
+const COURSE_PRICE_KOBO = getCourse(COURSE_SLUG)!.priceKobo;
 import { verifyTransaction } from "@/lib/flutterwave";
 import { sendMail } from "@/lib/mail";
 
@@ -66,7 +78,8 @@ describe("fulfilPayment", () => {
   });
 
   it("activates the enrolment and emails a receipt for a course purchase", async () => {
-    const payment = makePayment();
+    // The full price of this course. Paid in full, so nothing is owed.
+    const payment = makePayment({ amountKobo: COURSE_PRICE_KOBO });
     txMock.payment.update.mockResolvedValue({ ...payment, status: "PAID", paidAt: new Date() });
 
     const result = await fulfilPayment(payment);
@@ -74,12 +87,49 @@ describe("fulfilPayment", () => {
     expect(result.status).toBe("PAID");
     expect(txMock.enrollment.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId_courseSlug: { userId: "user_1", courseSlug: "frontend-engineering-react-nextjs" } },
-        update: { status: "ACTIVE" },
+        where: { userId_courseSlug: { userId: "user_1", courseSlug: COURSE_SLUG } },
+        create: expect.objectContaining({
+          status: "ACTIVE",
+          balanceKobo: 0,
+          balanceDueAt: null,
+        }),
       }),
     );
     expect(txMock.mentorshipBooking.findFirst).not.toHaveBeenCalled();
     expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: "ada@example.com" }));
+  });
+
+  it("records the outstanding balance when only an instalment was paid", async () => {
+    const half = instalmentKobo(COURSE_PRICE_KOBO);
+    const payment = makePayment({ amountKobo: half });
+    txMock.payment.update.mockResolvedValue({ ...payment, status: "PAID", paidAt: new Date() });
+
+    await fulfilPayment(payment);
+
+    const call = txMock.enrollment.upsert.mock.calls[0][0];
+    // Access is granted — that is the instalment deal — but the debt is recorded.
+    expect(call.create.status).toBe("ACTIVE");
+    expect(call.create.balanceKobo).toBe(COURSE_PRICE_KOBO - half);
+    expect(call.create.balanceKobo).toBeGreaterThan(0);
+    expect(call.create.balanceDueAt).toBeInstanceOf(Date);
+  });
+
+  it("clears the balance when the second instalment settles it", async () => {
+    const half = instalmentKobo(COURSE_PRICE_KOBO);
+    const payment = makePayment({ amountKobo: COURSE_PRICE_KOBO - half });
+    txMock.payment.update.mockResolvedValue({ ...payment, status: "PAID", paidAt: new Date() });
+
+    await fulfilPayment(payment);
+
+    // Second payment against an existing enrolment decrements what is owed...
+    const call = txMock.enrollment.upsert.mock.calls[0][0];
+    expect(call.update.balanceKobo).toEqual({ decrement: COURSE_PRICE_KOBO - half });
+    // ...and anything at or below zero is clamped and the due date cleared.
+    expect(txMock.enrollment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { balanceKobo: 0, balanceDueAt: null },
+      }),
+    );
   });
 
   it("schedules the booking for a mentorship purchase", async () => {

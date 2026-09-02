@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
+import { rateLimit, userKey } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { mentorshipCheckoutSchema } from "@/lib/validation";
 import { getPlan } from "@/content/mentorship";
@@ -15,6 +16,16 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Please sign in first" }, { status: 401 });
+  }
+
+  // Each call creates a Payment row and hits Flutterwave's API, so this is
+  // metered on the account rather than the IP.
+  const limit = rateLimit(userKey(user.id, "checkout:mentorship"), 10, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "That is a lot of attempts. Give it a moment and try again." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
   }
 
   const parsed = mentorshipCheckoutSchema.safeParse(

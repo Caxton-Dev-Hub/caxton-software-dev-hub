@@ -5,14 +5,26 @@ import { prisma } from "@/lib/prisma";
 import { getPlan } from "@/content/mentorship";
 import { formatDate } from "@/lib/utils";
 import { setBookingStatus } from "@/app/admin/actions";
+import { Pagination } from "@/components/ui/pagination";
+import { PER_PAGE, paginate, parsePage } from "@/lib/pagination";
 
 const options = ["AWAITING_PAYMENT", "SCHEDULED", "COMPLETED", "CANCELLED"] as const;
 
-export default async function AdminBookingsPage() {
+type Params = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminBookingsPage({ searchParams }: Params) {
   await requireAdmin();
+
+  const query = await searchParams;
+  const total = await prisma.mentorshipBooking.count();
+  const info = paginate(total, parsePage(query.page), PER_PAGE);
 
   const bookings = await prisma.mentorshipBooking.findMany({
     orderBy: { createdAt: "desc" },
+    skip: info.skip,
+    take: info.take,
     include: {
       user: { select: { name: true, email: true } },
       payment: { select: { status: true, reference: true } },
@@ -86,6 +98,12 @@ export default async function AdminBookingsPage() {
           ))}
         </ul>
       )}
+      <Pagination
+        info={info}
+        basePath="/admin/bookings"
+        params={query}
+        label="bookings"
+      />
     </>
   );
 }

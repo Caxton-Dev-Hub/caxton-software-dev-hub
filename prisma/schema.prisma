@@ -50,6 +50,14 @@ enum WaitlistStatus {
   DECLINED
 }
 
+/// Where a piece of assessed work stands. A submission is never silently
+/// "graded": it is either sent back for another attempt or accepted.
+enum SubmissionState {
+  SUBMITTED
+  CHANGES_REQUESTED
+  ACCEPTED
+}
+
 enum LeadStatus {
   NEW
   CONTACTED
@@ -69,12 +77,19 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  /// Sessions are stateless JWTs, so there is no row to delete to sign someone
+  /// out everywhere. Any token issued before this instant is rejected instead.
+  /// Bumped on password change; bump it by hand to revoke a stolen session.
+  sessionsValidFrom DateTime @default(now())
+
   enrollments Enrollment[]
   bookings    MentorshipBooking[]
   payments    Payment[]
   progress    LessonProgress[]
   threads     AssistantThread[]
   waitlist    WaitlistEntry[]
+  submissions Submission[]
+  reviews     AssignmentReview[]  @relation("reviewer")
 
   @@index([role])
 }
@@ -89,12 +104,22 @@ model Enrollment {
   createdAt   DateTime         @default(now())
   completedAt DateTime?
 
+  /// What the learner still owes on this seat, in kobo. Zero for a seat paid
+  /// in full. An instalment plan books half here and clears it when the
+  /// balance is paid, so arrears are answerable with a query rather than by
+  /// reading payment history. Never store money as a float.
+  balanceKobo  Int       @default(0)
+  /// When the balance falls due. Set on an instalment enrolment; null once
+  /// there is nothing left to pay.
+  balanceDueAt DateTime?
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment   Payment? @relation(fields: [paymentId], references: [id])
   paymentId String?  @unique
 
   @@unique([userId, courseSlug])
   @@index([courseSlug])
+  @@index([balanceKobo])
 }
 
 /// Per-lesson completion, keyed by the lesson id in src/content/courses.ts
@@ -109,6 +134,62 @@ model LessonProgress {
 
   @@unique([userId, lessonId])
   @@index([userId, courseSlug])
+}
+
+/// A learner's hand-in for one assignment in src/content/scheme.ts.
+///
+/// Resubmission is the normal path, not an exception: a mentor sends work back
+/// with CHANGES_REQUESTED and the learner opens a new attempt. Keeping each
+/// attempt as its own row means the second attempt can be marked against what
+/// the first one was told, and a learner can see their own progression.
+model Submission {
+  id            String          @id @default(cuid())
+  userId        String
+  courseSlug    String
+  /// The assignment id in src/content/scheme.ts. Not a foreign key: the
+  /// curriculum is content-as-code, so this is validated in the action layer.
+  assignmentId  String
+  attempt       Int             @default(1)
+  /// Where the work lives — a repository, a pull request, or a deployed URL.
+  /// A writeup is submitted as a link too, so there is one shape to review.
+  url           String
+  notes         String?         @db.Text
+  /// How the learner used AI on this piece, in their own words. Required by the
+  /// action layer for any assignment whose aiPolicy is not "unaided". Declaring
+  /// it is the assessed behaviour; using AI where allowed costs no marks.
+  aiDeclaration String?         @db.Text
+  state         SubmissionState @default(SUBMITTED)
+  submittedAt   DateTime        @default(now())
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review AssignmentReview?
+
+  @@unique([userId, assignmentId, attempt])
+  /// The marking queue reads "everything submitted on this course", so index it.
+  @@index([courseSlug, state])
+  @@index([userId, courseSlug])
+}
+
+/// A mentor's mark on one submission. Scores are keyed by the rubric criterion
+/// in src/content/scheme.ts rather than duplicated here — the rubric is
+/// curriculum, and curriculum lives in content-as-code so it can be reviewed in
+/// a pull request like everything else.
+model AssignmentReview {
+  id           String          @id @default(cuid())
+  submissionId String          @unique
+  reviewerId   String
+  verdict      SubmissionState
+  /// The written feedback. This is the part the learner actually reads, so it
+  /// is required even when the verdict is ACCEPTED.
+  comment      String          @db.Text
+  /// { [criterion]: number } against the assignment's rubric rows.
+  scores       Json
+  reviewedAt   DateTime        @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   User       @relation("reviewer", fields: [reviewerId], references: [id])
+
+  @@index([reviewerId])
 }
 
 /// A booked mentorship plan. `planSlug` references src/content/mentorship.ts

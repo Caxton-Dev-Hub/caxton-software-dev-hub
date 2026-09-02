@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { site } from "@/content/site";
+import { hasWork, site } from "@/content/site";
 import { courses } from "@/content/courses";
 import { mentorshipPlans } from "@/content/mentorship";
 import { projects } from "@/content/projects";
@@ -10,12 +10,15 @@ import { legalDocs } from "@/content/legal";
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
+  // /work is listed only when it has something on it; see the note in
+  // src/content/projects.ts. Submitting an empty page to search engines is a
+  // quality signal nobody needs.
   const staticPages = [
+    ...(hasWork ? [{ path: "/work", priority: 0.8 }] : []),
     { path: "", priority: 1 },
     { path: "/services", priority: 0.9 },
     { path: "/courses", priority: 0.9 },
     { path: "/mentorship", priority: 0.9 },
-    { path: "/work", priority: 0.8 },
     { path: "/verify", priority: 0.8 },
     { path: "/about", priority: 0.7 },
     { path: "/contact", priority: 0.7 },
