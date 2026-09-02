@@ -24,6 +24,21 @@ function secret(): Uint8Array {
       "AUTH_SECRET is missing or too short. Generate one with: openssl rand -base64 32",
     );
   }
+  // The .env.example placeholder is long enough to pass the length check, so
+  // booting with it would sign every session with a publicly known key. Reject
+  // it the same way the payment keys reject their own DUMMY placeholders.
+  if (value.includes("DUMMY") || value.includes("REPLACE_ME")) {
+    throw new Error(
+      "AUTH_SECRET is still the placeholder from .env.example. Generate a real one with: openssl rand -base64 32",
+    );
+  }
+  // A long run of one character passes a length check but carries almost no
+  // entropy. Not a strength meter — just a floor under copy-paste mistakes.
+  if (new Set(value).size < 8) {
+    throw new Error(
+      "AUTH_SECRET has too little variation to be a real secret. Generate one with: openssl rand -base64 32",
+    );
+  }
   return new TextEncoder().encode(value);
 }
 
