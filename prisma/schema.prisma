@@ -69,6 +69,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  /// Sessions are stateless JWTs, so there is no row to delete to sign someone
+  /// out everywhere. Any token issued before this instant is rejected instead.
+  /// Bumped on password change; bump it by hand to revoke a stolen session.
+  sessionsValidFrom DateTime @default(now())
+
   enrollments Enrollment[]
   bookings    MentorshipBooking[]
   payments    Payment[]
