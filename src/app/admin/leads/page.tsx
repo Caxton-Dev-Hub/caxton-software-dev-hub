@@ -4,13 +4,27 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime } from "@/lib/utils";
 import { setLeadStatus } from "@/app/admin/actions";
+import { Pagination } from "@/components/ui/pagination";
+import { PER_PAGE, paginate, parsePage } from "@/lib/pagination";
 
 const options = ["NEW", "CONTACTED", "QUALIFIED", "CLOSED"] as const;
 
-export default async function AdminLeadsPage() {
+type Params = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminLeadsPage({ searchParams }: Params) {
   await requireAdmin();
 
-  const leads = await prisma.lead.findMany({ orderBy: { createdAt: "desc" } });
+  const query = await searchParams;
+  const total = await prisma.lead.count();
+  const info = paginate(total, parsePage(query.page), PER_PAGE);
+
+  const leads = await prisma.lead.findMany({
+    orderBy: { createdAt: "desc" },
+    skip: info.skip,
+    take: info.take,
+  });
 
   return (
     <>
@@ -89,6 +103,13 @@ export default async function AdminLeadsPage() {
           ))}
         </ul>
       )}
+
+      <Pagination
+        info={info}
+        basePath="/admin/leads"
+        params={query}
+        label="enquiries"
+      />
     </>
   );
 }

@@ -5,17 +5,35 @@ import { prisma } from "@/lib/prisma";
 import { getCourse } from "@/content/courses";
 import { formatDate } from "@/lib/utils";
 import { formatKobo } from "@/lib/money";
+import { Pagination } from "@/components/ui/pagination";
+import { PER_PAGE, paginate, parsePage } from "@/lib/pagination";
 
-export default async function AdminEnrollmentsPage() {
+type Params = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminEnrollmentsPage({ searchParams }: Params) {
   await requireAdmin();
 
-  const [enrollments, overdueRows] = await Promise.all([
+  const query = await searchParams;
+  const total = await prisma.enrollment.count();
+  const info = paginate(total, parsePage(query.page), PER_PAGE);
+
+  const [enrollments, owingRows, overdueRows] = await Promise.all([
     prisma.enrollment.findMany({
       orderBy: { createdAt: "desc" },
+      skip: info.skip,
+      take: info.take,
       include: {
         user: { select: { name: true, email: true, phone: true } },
         payment: { select: { status: true, reference: true } },
       },
+    }),
+    // Arrears are a property of the whole ledger, not of the page on screen, so
+    // this reads every unpaid seat regardless of which page is being viewed.
+    prisma.enrollment.findMany({
+      where: { balanceKobo: { gt: 0 }, status: { not: "CANCELLED" } },
+      select: { id: true, balanceKobo: true },
     }),
     // Let Postgres compare against its own clock — `now()` in a query is not a
     // render-time side effect the way `Date.now()` in the component body is.
@@ -32,10 +50,7 @@ export default async function AdminEnrollmentsPage() {
   //
   // Overdue is decided by the database (see `overdueIds` above) rather than by
   // reading a clock during render, which is impure and lint-flagged.
-  const owing = enrollments.filter(
-    (enrollment) =>
-      enrollment.balanceKobo > 0 && enrollment.status !== "CANCELLED",
-  );
+  const owing = owingRows;
   const owedTotal = owing.reduce(
     (sum, enrollment) => sum + enrollment.balanceKobo,
     0,
@@ -47,7 +62,7 @@ export default async function AdminEnrollmentsPage() {
       <PageTitle
         eyebrow="Admin"
         title="Enrolments"
-        lead={`${enrollments.length} enrolment${enrollments.length === 1 ? "" : "s"} across all cohorts.`}
+        lead={`${total} enrolment${total === 1 ? "" : "s"} across all cohorts.`}
       />
 
       {owing.length > 0 ? (
@@ -142,6 +157,12 @@ export default async function AdminEnrollmentsPage() {
           </table>
         </div>
       )}
+      <Pagination
+        info={info}
+        basePath="/admin/enrollments"
+        params={query}
+        label="enrolments"
+      />
     </>
   );
 }

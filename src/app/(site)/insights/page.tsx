@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { posts } from "@/content/posts";
 import { formatDate } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
+import { paginateList, parsePage } from "@/lib/pagination";
 
 export const metadata: Metadata = {
   title: "Insights",
@@ -15,8 +17,20 @@ export const metadata: Metadata = {
     "Practical writing on software delivery, hiring developers in Nigeria, and learning to engineer — from the team at Caxton Software Dev Hub.",
 };
 
-export default function InsightsPage() {
-  const sorted = [...posts].sort((a, b) => b.date.localeCompare(a.date));
+type Params = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+const POSTS_PER_PAGE = 10;
+
+export default async function InsightsPage({ searchParams }: Params) {
+  const query = await searchParams;
+  const sortedAll = [...posts].sort((a, b) => b.date.localeCompare(a.date));
+  const { rows: sorted, info } = paginateList(
+    sortedAll,
+    parsePage(query.page),
+    POSTS_PER_PAGE,
+  );
 
   return (
     <>
@@ -61,6 +75,13 @@ export default function InsightsPage() {
               </li>
             ))}
           </ul>
+
+          <Pagination
+            info={info}
+            basePath="/insights"
+            params={query}
+            label="posts"
+          />
         </Container>
       </Section>
     </>

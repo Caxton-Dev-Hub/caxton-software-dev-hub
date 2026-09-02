@@ -7,6 +7,8 @@ import { getCourse } from "@/content/courses";
 import { getPlan } from "@/content/mentorship";
 import { formatKobo } from "@/lib/money";
 import { formatDateTime } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
+import { PER_PAGE, paginate, parsePage } from "@/lib/pagination";
 
 const tone = {
   PAID: "green",
@@ -16,17 +18,33 @@ const tone = {
   REFUNDED: "neutral",
 } as const;
 
-export default async function PaymentsPage() {
+type Params = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function PaymentsPage({ searchParams }: Params) {
   const user = await requireUser();
 
-  const payments = await prisma.payment.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
+  const query = await searchParams;
+  const total = await prisma.payment.count({ where: { userId: user.id } });
+  const info = paginate(total, parsePage(query.page), PER_PAGE);
 
-  const paidTotal = payments
-    .filter((payment) => payment.status === "PAID")
-    .reduce((sum, payment) => sum + payment.amountKobo, 0);
+  const [payments, paid] = await Promise.all([
+    prisma.payment.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      skip: info.skip,
+      take: info.take,
+    }),
+    // "What you have paid us" is a fact about the account, not about the page
+    // being viewed, so it is summed in the database across every paid row.
+    prisma.payment.aggregate({
+      where: { userId: user.id, status: "PAID" },
+      _sum: { amountKobo: true },
+    }),
+  ]);
+
+  const paidTotal = paid._sum.amountKobo ?? 0;
 
   return (
     <>
@@ -102,6 +120,12 @@ export default async function PaymentsPage() {
           </p>
         </>
       )}
+      <Pagination
+        info={info}
+        basePath="/dashboard/payments"
+        params={query}
+        label="payments"
+      />
     </>
   );
 }
