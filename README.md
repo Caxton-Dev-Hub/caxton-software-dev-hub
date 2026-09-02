@@ -293,26 +293,27 @@ Both the joiner and `training@` get an email on every new join.
 
 ## Before you launch
 
-Everything below is deliberately placeholder. Search the codebase for `DUMMY`.
+Search the codebase for `DUMMY` to find what's still outstanding.
 
-- [ ] **Contact details** — `src/content/site.ts`: email addresses, phone, WhatsApp
-- [ ] **Social links** — X and LinkedIn URLs are guesses; GitHub links are real
-- [ ] **Metrics** — the "40+ projects / 300+ engineers" figures on the homepage
-- [ ] **Testimonials** — replace with real, attributable quotes and get permission
-- [ ] **Case studies** — `src/content/projects.ts` is illustrative; every entry is
-      flagged `dummy: true` and renders a "Placeholder" badge until you remove it
-- [ ] **Prices** — course, mentorship, and service prices are all plausible
-      starting points, not decisions
-- [ ] **Cohort dates** — `nextCohort` on each course
-- [ ] **Waitlist flags** — `CX-301` ships marked `availability: "waitlist"` as a
-      demonstration; set each course to reflect real seat availability
+- [ ] **Phone / WhatsApp** — `src/content/site.ts` `contact.phone` and
+      `contact.whatsapp` are still `+234 800 000 0000`
+- [ ] **Social links** — `src/content/site.ts` `socials.x` and `socials.linkedin`
+      are guesses; GitHub links are real
 - [ ] **Legal documents** — `src/content/legal.ts` is plain-English drafting, not
       legal advice. Have a Nigerian lawyer review it, particularly the NDPA 2023
       sections in the privacy policy
-- [ ] **Seed accounts** — delete them, or change the passwords
-- [ ] **`AUTH_SECRET`** — generate a real one
-- [ ] **OG image** — add `src/app/opengraph-image.png` (1200×630)
-- [ ] **Favicon** — replace `src/app/favicon.ico`
+- [ ] **Seed accounts** — `npm run db:seed` creates `admin@caxtonhub.com` /
+      `student@caxtonhub.com` with known passwords; don't run it against a
+      public database, or delete/rotate them after
+- [ ] **`AUTH_SECRET`** — generate a real one (`openssl rand -base64 32`); the
+      app now refuses to boot on the placeholder or a low-entropy value
+
+Already resolved and no longer placeholder, despite what older notes here said:
+testimonials, case studies, and homepage metrics are deliberately empty rather
+than illustrative (see `src/content/projects.ts` and `site.ts`) until there is
+something real to put in; prices and cohort dates are current decisions, not
+stand-ins; the favicon and `src/app/opengraph-image.png` now use the real logo
+and marketing banner.
 
 ---
 
