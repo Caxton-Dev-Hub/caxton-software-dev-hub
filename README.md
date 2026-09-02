@@ -295,10 +295,6 @@ Both the joiner and `training@` get an email on every new join.
 
 Search the codebase for `DUMMY` to find what's still outstanding.
 
-- [ ] **Phone / WhatsApp** — `src/content/site.ts` `contact.phone` and
-      `contact.whatsapp` are still `+234 800 000 0000`
-- [ ] **Social links** — `src/content/site.ts` `socials.x` and `socials.linkedin`
-      are guesses; GitHub links are real
 - [ ] **Legal documents** — `src/content/legal.ts` is plain-English drafting, not
       legal advice. Have a Nigerian lawyer review it, particularly the NDPA 2023
       sections in the privacy policy

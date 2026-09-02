@@ -48,16 +48,16 @@ export const site = {
   contact: {
     email: "hello@caxtondevhub.xyz",
     training: "training@caxtondevhub.xyz",
-    phone: "+234 800 000 0000", // DUMMY
-    whatsapp: "+234 800 000 0000", // DUMMY
+    phone: "+234 904 614 4400",
+    whatsapp: "+234 816 602 9808",
     hours: "Mon – Fri, 9:00 – 18:00 WAT",
   },
 
   socials: {
     github: "https://github.com/caxtonacollins",
     githubAlt: "https://github.com/strngecloud",
-    x: "https://x.com/caxtonacollins", // DUMMY
-    linkedin: "https://www.linkedin.com/company/caxton-software-dev-hub", // DUMMY
+    x: "https://x.com/CollinsCaxton4",
+    linkedin: "https://www.linkedin.com/in/caxtonacollins",
   },
 
   /**
