@@ -7,14 +7,15 @@ import { Container } from "@/components/ui/container";
 import { Logo } from "@/components/logo";
 import { RegistryStrip } from "@/components/registry-strip";
 import { NewsletterForm } from "@/components/newsletter-form";
-import { site } from "@/content/site";
+import { hasWork, site } from "@/content/site";
 
 const columns = [
   {
     title: "Services",
     links: [
       { href: "/services", label: "What we build" },
-      { href: "/work", label: "Selected work" },
+      // Dropped while there is no delivered work — see src/content/projects.ts.
+      ...(hasWork ? [{ href: "/work", label: "Selected work" }] : []),
       { href: "/services#process", label: "How we work" },
       { href: "/contact", label: "Start a project" },
     ],

@@ -11,6 +11,19 @@ import { getProject, projects } from "@/content/projects";
 
 type Params = { params: Promise<{ slug: string }> };
 
+/**
+ * The case-study slugs are content-as-code, so the complete set is known at
+ * build time and anything else is a 404 decided by the router.
+ *
+ * This is load-bearing, not tidiness. With no projects `generateStaticParams`
+ * returns an empty list, which lets Next classify this route as static; an old
+ * bookmarked /work/... URL then renders anyway, the `(site)` layout reads the
+ * session cookie, and the request dies with "page changed from static to
+ * dynamic at runtime" — a 500 where the visitor should have got a 404.
+ * Refusing unknown params up front means that render never starts.
+ */
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return projects.map((project) => ({ slug: project.slug }));
 }
@@ -48,7 +61,6 @@ export default async function ProjectPage({ params }: Params) {
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <Badge tone="green">{project.sector}</Badge>
               <Badge>{project.year}</Badge>
-              {project.dummy ? <Badge tone="seal">Placeholder case study</Badge> : null}
             </div>
 
             <h1 className="mt-5 max-w-3xl text-[clamp(2rem,4.6vw,3.25rem)] leading-[1.04] tracking-[-0.032em]">
