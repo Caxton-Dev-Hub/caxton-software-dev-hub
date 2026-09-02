@@ -196,6 +196,14 @@ Two things the code deliberately does not trust:
    `https://your-domain.com/dev-hub/api/flutterwave/webhook`
 3. Test with Flutterwave's test cards before going live
 
+> **Do not "tidy" the webhook path.** It lives under `/dev-hub/api/...` rather
+> than `/api/...` deliberately — the unusual prefix keeps it off the paths that
+> get scanned by default. Moving it to `/api/flutterwave/webhook` for
+> consistency silently breaks payments: Flutterwave keeps POSTing to the old
+> URL, those calls 404, and fulfilment then depends entirely on the customer
+> completing the browser callback. If you must move it, update the dashboard
+> webhook URL in the same change.
+
 **Switching provider:** everything provider-specific is in
 `src/lib/flutterwave.ts` plus the webhook route. Nothing else references
 Flutterwave by name.
