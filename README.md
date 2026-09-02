@@ -301,8 +301,10 @@ Search the codebase for `DUMMY` to find what's still outstanding.
 - [ ] **Seed accounts** — `npm run db:seed` creates `admin@caxtonhub.com` /
       `student@caxtonhub.com` with known passwords; don't run it against a
       public database, or delete/rotate them after
-- [ ] **`AUTH_SECRET`** — generate a real one (`openssl rand -base64 32`); the
-      app now refuses to boot on the placeholder or a low-entropy value
+- [ ] **`AUTH_SECRET`** — local `.env`/`.env.local` now has a real generated
+      value; production needs its own (`openssl rand -base64 32`), set directly
+      in the host's env vars, never committed. The app refuses to boot on the
+      `.env.example` placeholder or a low-entropy value
 
 Already resolved and no longer placeholder, despite what older notes here said:
 testimonials, case studies, and homepage metrics are deliberately empty rather
