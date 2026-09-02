@@ -4,7 +4,15 @@
  * Everything under `registration` is transcribed from the CAC Certificate of
  * Registration and should not be edited without checking the certificate.
  * Everything marked DUMMY is placeholder copy — replace before launch.
+ *
+ * Caxton is pre-launch: no paid client work delivered and no cohort taught yet.
+ * Nothing on the site may imply otherwise. That is why `proofPoints` below
+ * carries facts a stranger can check rather than metrics only we can see, and
+ * why `testimonials` and `projects` are empty rather than illustrative — the
+ * sections that render them disappear until there is something real to put in.
  */
+
+import { projects } from "./projects";
 
 export const site = {
   name: "Caxton Software Dev Hub",
@@ -52,23 +60,65 @@ export const site = {
     linkedin: "https://www.linkedin.com/company/caxton-software-dev-hub", // DUMMY
   },
 
-  /** Numbers shown on the site. Replace with audited figures before launch. */
-  metrics: [
-    { value: "40+", label: "Projects shipped", note: "DUMMY" },
-    { value: "300+", label: "Engineers trained", note: "DUMMY" },
-    { value: "92%", label: "Cohort completion rate", note: "DUMMY" },
-    { value: "7 yrs", label: "Combined delivery experience", note: "DUMMY" },
+  /**
+   * The band under the hero.
+   *
+   * Every line here is checkable by someone who does not trust us yet: the
+   * first two are on the CAC certificate, and the third is a public GitHub
+   * account anyone can read. That is the point — a new studio asking for a
+   * deposit is better served by facts a sceptic can verify than by numbers it
+   * would have to be taken on faith for.
+   *
+   * Deliberately does NOT repeat the registration number, the act, or the city:
+   * those are already in the strip a few pixels above this band, and saying
+   * them twice in one screen reads as a mistake rather than as emphasis.
+   *
+   * When there is a real delivery record, add it here. Do not add a figure
+   * that cannot survive the question "how did you count that?".
+   */
+  proofPoints: [
+    {
+      value: "12 July 2026",
+      label: "Registered with the CAC",
+      href: "/verify",
+    },
+    { value: "Software & web", label: "Our registered nature of business" },
+    {
+      value: "On GitHub",
+      label: "Our code is public — read it",
+      href: "https://github.com/caxtonacollins",
+    },
   ],
 } as const;
 
-export const nav = [
-  { href: "/services", label: "Services" },
-  { href: "/work", label: "Work" },
-  { href: "/courses", label: "Courses" },
-  { href: "/mentorship", label: "Mentorship" },
-  { href: "/verify", label: "Verify us" },
+/**
+ * Main navigation.
+ *
+ * `section` is the id of the matching band on the landing page. On "/" the
+ * header links to that anchor and scrolls; from any other page it links to the
+ * full page as before. Each landing band carries its own "all of it" button,
+ * so nothing becomes unreachable — see src/app/(site)/page.tsx.
+ */
+/** Whether there is any delivered client work to show. */
+export const hasWork = projects.length > 0;
+
+const allNav = [
+  { href: "/services", label: "Services", section: "services" },
+  { href: "/work", label: "Work", section: "work" },
+  { href: "/courses", label: "Courses", section: "courses" },
+  { href: "/mentorship", label: "Mentorship", section: "mentorship" },
+  { href: "/verify", label: "Verify us", section: "trust" },
   { href: "/insights", label: "Insights" },
 ] as const;
+
+/**
+ * Work drops out of the navigation while there is no delivered work, so the
+ * header never offers a link to an empty page. It returns on its own once
+ * src/content/projects.ts has an entry.
+ */
+export const nav = allNav.filter(
+  (item) => item.href !== "/work" || hasWork,
+);
 
 export type Testimonial = {
   quote: string;
@@ -77,37 +127,15 @@ export type Testimonial = {
   kind: "client" | "student";
 };
 
-/** DUMMY — replace with real, attributable quotes before launch. */
-export const testimonials: Testimonial[] = [
-  {
-    quote:
-      "They scoped the build in a week, gave us a fixed price, and shipped ahead of the date. The handover documentation alone was worth the fee.",
-    name: "Amina Yusuf",
-    role: "Operations Lead, Kaduna logistics company",
-    kind: "client",
-  },
-  {
-    quote:
-      "I came in writing HTML by hand. Eleven weeks later I was reviewing pull requests at my first job. The weekly one-to-ones are what made the difference.",
-    name: "Tobi Adeyemi",
-    role: "Frontend Engineer, Lagos",
-    kind: "student",
-  },
-  {
-    quote:
-      "The AI tutor answers at 1am when the mentor is asleep, and it explains using our own course material rather than something generic off the internet.",
-    name: "Grace Okonkwo",
-    role: "Cairo & Starknet cohort, 2026",
-    kind: "student",
-  },
-  {
-    quote:
-      "We had been burned by a previous developer who vanished. Caxton gave us weekly demos and repository access from day one. No mysteries.",
-    name: "Ibrahim Sani",
-    role: "Founder, agritech startup",
-    kind: "client",
-  },
-];
+/**
+ * Real, attributable quotes only.
+ *
+ * Empty until clients and graduates exist and have given permission to be
+ * named. The landing page renders the testimonials band only when this has
+ * entries, so adding the first one brings the section back on its own — there
+ * is nothing else to switch on.
+ */
+export const testimonials: Testimonial[] = [];
 
 export const guarantees = [
   {
