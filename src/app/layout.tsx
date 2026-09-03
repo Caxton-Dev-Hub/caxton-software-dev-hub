@@ -62,7 +62,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-NG" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html
+      lang="en-NG"
+      className={`${display.variable} ${body.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         {/*
          * Opt in to scroll-reveal animation before first paint.
